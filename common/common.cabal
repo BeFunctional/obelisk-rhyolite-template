@@ -55,5 +55,4 @@ library
     Common.Prelude
     Common.Route
     Common.Schema
-    Data.Attoparsec.Text.BibleReference
-    Data.Bible
+  ghc-options: -Wall

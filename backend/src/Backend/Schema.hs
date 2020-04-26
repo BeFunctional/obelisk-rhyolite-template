@@ -11,7 +11,6 @@
 module Backend.Schema where
 
 import Backend.Transaction (Transaction (..))
-import Common.App (ClosedInterval', TagOccurrence)
 import Common.Prelude
 import Common.Schema
 import Control.Monad.IO.Class (MonadIO (liftIO))
@@ -38,14 +37,7 @@ import Rhyolite.Backend.Listen (DbNotification (..), NotificationType (..), noti
 import Rhyolite.Schema (SchemaName (..))
 
 data Db f = Db
-  { _dbTranslation :: f (TableEntity TranslationT),
-    _dbBook :: f (TableEntity BookT),
-    _dbVerse :: f (TableEntity VerseT),
-    _dbTag :: f (TableEntity TagT),
-    _dbTaggedRange :: f (TableEntity TaggedRangeT),
-    _dbTaggedRangeByWord :: f (TableEntity TaggedRangeByWordT),
-    _dbTaggedRangeNote :: f (TableEntity TaggedRangeNoteT),
-    _dbTask :: f (TableEntity TaskT)
+  { _dbTask :: f (TableEntity TaskT)
   }
   deriving stock (Generic)
   deriving anyclass (Database be)
@@ -66,8 +58,6 @@ withDb f = liftIO
     f pool
 
 data Notification a where
-  Notification_Tag :: Notification (Presence, TagOccurrence)
-  Notification_SetNotes :: Notification ((Text, ClosedInterval' (VerseReference, Int)), TaggedRangeNoteId)
   Notification_AddTask :: Notification Task
 
 deriving instance Show (Notification a)
