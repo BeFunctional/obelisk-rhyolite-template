@@ -11,6 +11,44 @@ import Data.Time (LocalTime)
 import Database.Beam (Beamable, Columnar, PrimaryKey, Table (primaryKey))
 import Database.Beam.Backend.SQL.Types (SqlSerial)
 
+data TaskT f = Task
+  { _taskId :: Columnar f Int,
+    _taskTitle :: Columnar f Text
+  }
+  deriving (Generic, Beamable)
+
+instance Table TaskT where
+  newtype PrimaryKey TaskT f = TaskId {unTaskId :: Columnar f Int}
+    deriving stock (Generic)
+    deriving anyclass (Beamable)
+  primaryKey = TaskId . _taskId
+
+type Task = TaskT Identity
+
+deriving instance Eq Task
+
+deriving instance Show Task
+
+instance FromJSON Task
+
+instance ToJSON Task
+
+type TaskId = PrimaryKey TaskT Identity
+
+deriving instance Eq TaskId
+
+deriving instance Ord TaskId
+
+deriving instance Show TaskId
+
+instance FromJSON TaskId
+
+instance ToJSON TaskId
+
+instance Json.ToJSONKey TaskId
+
+instance Json.FromJSONKey TaskId
+
 -------------------------------------------------------------------------------
 data TranslationT f = Translation
   { _translationId :: Columnar f Int,

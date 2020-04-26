@@ -21,6 +21,11 @@ requestHandler runTransaction =
   RequestHandler $
     runTransaction . \case
       ApiRequest_Public r -> case r of
+        PublicRequest_AddTask task -> do
+          runQuery $ do
+            runInsert
+              $ insert (_dbTask db)
+              $ insertValues [task]
         PublicRequest_AddTag occurrence@(TagOccurrence tag translationId (ClosedInterval' (startRef, startWord) (endRef, endWord))) -> do
           runQuery $ do
             -- TODO: Add real unique indexs to get rid of this dance and just rely on the "on conflict" logic.

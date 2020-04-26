@@ -44,7 +44,8 @@ data Db f = Db
     _dbTag :: f (TableEntity TagT),
     _dbTaggedRange :: f (TableEntity TaggedRangeT),
     _dbTaggedRangeByWord :: f (TableEntity TaggedRangeByWordT),
-    _dbTaggedRangeNote :: f (TableEntity TaggedRangeNoteT)
+    _dbTaggedRangeNote :: f (TableEntity TaggedRangeNoteT),
+    _dbTask :: f (TableEntity TaskT)
   }
   deriving stock (Generic)
   deriving anyclass (Database be)
