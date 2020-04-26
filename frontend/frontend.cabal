@@ -7,13 +7,10 @@ library
   hs-source-dirs: src
   build-depends:
       base
-    , colour
     , common
     , containers
     , exceptions
     , ghcjs-dom
-    , hashable
-    , IntervalMap
     , jsaddle
     , lens
     , MonadRandom
@@ -22,18 +19,14 @@ library
     , obelisk-frontend
     , obelisk-generated-static
     , obelisk-route
-    , palette
     , random
     , reflex-dom-core
     , rhyolite-common
     , rhyolite-frontend
     , text
-    , these
     , time
   exposed-modules:
     Frontend
-  other-modules:
-    Frontend.Selection
   default-extensions:
     BangPatterns
     ConstraintKinds

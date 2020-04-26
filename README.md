@@ -9,5 +9,8 @@ A template repository for your [Obelisk](https://github.com/obsidiansystems/obel
 ## Running
 
 - Install obelisk
-- Seed the database: `nix-shell -A ghc.gargoyle-postgresql-nix --run 'gargoyle-pg-run db psql < kjv-only.sql'`
 - Run `ob run`
+
+## Building
+
+* Run `nix-build -A exe` for full server executable.
