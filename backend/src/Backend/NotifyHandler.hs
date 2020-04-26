@@ -13,6 +13,13 @@ import Rhyolite.Backend.Listen (DbNotification (..))
 
 notifyHandler :: forall a. Monoid a => (forall x. (forall mode. Transaction mode x) -> IO x) -> DbNotification Notification -> ViewSelector a -> IO (View a)
 notifyHandler runTransaction msg vs = case _dbNotification_message msg of
+  Notification_AddTask :=> Identity task ->
+    pure $ case getOption $ _viewSelector_tasks vs of
+      Nothing -> mempty
+      Just a ->
+        mempty
+          { _view_tasks = Option $ Just $ (a, MMap.singleton (primaryKey task) (First task))
+          }
   Notification_Tag :=> Identity (presence, TagOccurrence tagName translationId interval) ->
     let entry = MMap.singleton translationId $ MMap.singleton tagName $ MMap.singleton interval (First presence, ())
      in pure

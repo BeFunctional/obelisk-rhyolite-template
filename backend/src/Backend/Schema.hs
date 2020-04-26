@@ -68,6 +68,7 @@ withDb f = liftIO
 data Notification a where
   Notification_Tag :: Notification (Presence, TagOccurrence)
   Notification_SetNotes :: Notification ((Text, ClosedInterval' (VerseReference, Int)), TaggedRangeNoteId)
+  Notification_AddTask :: Notification Task
 
 deriving instance Show (Notification a)
 

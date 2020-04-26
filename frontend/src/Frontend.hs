@@ -74,6 +74,10 @@ appWidget1 = do
     Just tasksDyn ->
       dyn_ $ ffor tasksDyn $ \task ->
         text $ T.pack $ show task
+  el "h2" $ text "Add random task"
+  btn <- button "Add"
+  void $ requestingIdentity $ ffor btn $ \_ ->
+    public $ PublicRequest_AddTask "This has to be a random title"
   pure ()
 
 watchTasks ::
