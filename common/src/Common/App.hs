@@ -132,9 +132,10 @@ mapMaybe2Deep :: (Foldable t, Filterable f, Filterable t) => (a -> Maybe b) -> f
 mapMaybe2Deep f = mapMaybe (nullToNothing . mapMaybe f)
 
 data ViewSelector a = ViewSelector
-  { _viewSelector_translations :: !(Option a),
-    _viewSelector_verseRanges :: !(MonoidalMap TranslationId (MonoidalMap (Interval VerseReference) a)),
-    _viewSelector_tagNotes :: !(MonoidalMap (Text, ClosedInterval' (VerseReference, Int)) a)
+  { _viewSelector_translations :: Option a,
+    _viewSelector_verseRanges :: MonoidalMap TranslationId (MonoidalMap (Interval VerseReference) a),
+    _viewSelector_tagNotes :: MonoidalMap (Text, ClosedInterval' (VerseReference, Int)) a,
+    _viewSelector_tasks :: Option a
   }
   deriving (Eq, Functor, Generic, Show)
 
@@ -147,11 +148,12 @@ instance Semigroup a => Semigroup (ViewSelector a) where
     ViewSelector
       { _viewSelector_translations = _viewSelector_translations a <> _viewSelector_translations b,
         _viewSelector_verseRanges = _viewSelector_verseRanges a <> _viewSelector_verseRanges b,
-        _viewSelector_tagNotes = _viewSelector_tagNotes a <> _viewSelector_tagNotes b
+        _viewSelector_tagNotes = _viewSelector_tagNotes a <> _viewSelector_tagNotes b,
+        _viewSelector_tasks = _viewSelector_tasks a <> _viewSelector_tasks b
       }
 
 instance Semigroup a => Monoid (ViewSelector a) where
-  mempty = ViewSelector mempty mempty mempty
+  mempty = ViewSelector mempty mempty mempty mempty
   mappend = (<>)
 
 instance Semialign ViewSelector where
@@ -159,17 +161,19 @@ instance Semialign ViewSelector where
     ViewSelector
       { _viewSelector_translations = alignWith f (_viewSelector_translations a) (_viewSelector_translations b),
         _viewSelector_verseRanges = getCompose $ alignWith f (Compose $ _viewSelector_verseRanges a) (Compose $ _viewSelector_verseRanges b),
-        _viewSelector_tagNotes = alignWith f (_viewSelector_tagNotes a) (_viewSelector_tagNotes b)
+        _viewSelector_tagNotes = alignWith f (_viewSelector_tagNotes a) (_viewSelector_tagNotes b),
+        _viewSelector_tasks = alignWith f (_viewSelector_tasks a) (_viewSelector_tasks b)
       }
   zipWith f a b =
     ViewSelector
       { _viewSelector_translations = Align.zipWith f (_viewSelector_translations a) (_viewSelector_translations b),
         _viewSelector_verseRanges = getCompose $ Align.zipWith f (Compose $ _viewSelector_verseRanges a) (Compose $ _viewSelector_verseRanges b),
-        _viewSelector_tagNotes = Align.zipWith f (_viewSelector_tagNotes a) (_viewSelector_tagNotes b)
+        _viewSelector_tagNotes = Align.zipWith f (_viewSelector_tagNotes a) (_viewSelector_tagNotes b),
+        _viewSelector_tasks = Align.zipWith f (_viewSelector_tasks a) (_viewSelector_tasks b)
       }
 
 instance Align ViewSelector where
-  nil = ViewSelector nil nil nil
+  nil = ViewSelector nil nil nil nil
 
 instance (Group a) => Group (ViewSelector a) where
   negateG = fmap negateG
@@ -186,7 +190,8 @@ instance Filterable ViewSelector where
     ViewSelector
       { _viewSelector_translations = mapMaybe f (_viewSelector_translations x),
         _viewSelector_verseRanges = mapMaybe2Deep f (_viewSelector_verseRanges x),
-        _viewSelector_tagNotes = mapMaybe f (_viewSelector_tagNotes x)
+        _viewSelector_tagNotes = mapMaybe f (_viewSelector_tagNotes x),
+        _viewSelector_tasks = mapMaybe f (_viewSelector_tasks x)
       }
 
 instance (Monoid a, Eq a) => Query (ViewSelector a) where
@@ -197,7 +202,8 @@ instance (Monoid a, Eq a) => Query (ViewSelector a) where
         _view_tagNotes = croppedIntersectionWith (flip const) (_viewSelector_tagNotes vs) (_view_tagNotes v),
         _view_verseRanges = verseRanges,
         _view_verses = rederiveVerses verseRanges (_view_verses v),
-        _view_tags = rederiveTags verseRanges (_view_tags v)
+        _view_tags = rederiveTags verseRanges (_view_tags v),
+        _view_tasks = if null (_viewSelector_tasks vs) then mempty else _view_tasks v
       }
     where
       verseRanges = croppedIntersectionWith (croppedIntersectionWith const) (_viewSelector_verseRanges vs) (_view_verseRanges v)
@@ -249,7 +255,8 @@ data View a = View
     _view_verseRanges :: !(MonoidalMap TranslationId (MonoidalMap (Interval VerseReference) a)),
     _view_tagNotes :: !(MonoidalMap (Text, ClosedInterval' (VerseReference, Int)) (a, First (Text, UTCTime))),
     _view_verses :: !(MonoidalMap TranslationId (MonoidalMap VerseReference (Seq a, First Text))),
-    _view_tags :: !(MonoidalMap TranslationId (MonoidalMap Text (MonoidalMap (ClosedInterval' (VerseReference, Int)) (First Presence, Seq a))))
+    _view_tags :: !(MonoidalMap TranslationId (MonoidalMap Text (MonoidalMap (ClosedInterval' (VerseReference, Int)) (First Presence, Seq a)))),
+    _view_tasks :: !(Option (a, MonoidalMap TaskId (First Task)))
   }
   deriving (Eq, Foldable, Functor, Generic, Show)
 
@@ -264,13 +271,14 @@ instance Monoid a => Semigroup (View a) where
         _view_verseRanges = verseRanges,
         _view_tagNotes = _view_tagNotes a <> _view_tagNotes b,
         _view_verses = rederiveVerses verseRanges (_view_verses a <> _view_verses b),
-        _view_tags = rederiveTags verseRanges (_view_tags a <> _view_tags b)
+        _view_tags = rederiveTags verseRanges (_view_tags a <> _view_tags b),
+        _view_tasks = _view_tasks a <> _view_tasks b
       }
     where
       verseRanges = _view_verseRanges a <> _view_verseRanges b
 
 instance Monoid a => Monoid (View a) where
-  mempty = View mempty mempty mempty mempty mempty
+  mempty = View mempty mempty mempty mempty mempty mempty
   mappend = (<>)
 
 instance Filterable View where
@@ -280,7 +288,8 @@ instance Filterable View where
         _view_tagNotes = mapMaybeView f (_view_tagNotes x),
         _view_verseRanges = verseRanges,
         _view_verses = rederiveVerses verseRanges (_view_verses x),
-        _view_tags = rederiveTags verseRanges (_view_tags x)
+        _view_tags = rederiveTags verseRanges (_view_tags x),
+        _view_tasks = mapMaybeView f (_view_tasks x)
       }
     where
       verseRanges = mapMaybe2Deep f $ _view_verseRanges x

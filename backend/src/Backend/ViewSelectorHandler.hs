@@ -26,6 +26,11 @@ viewSelectorHandler runTransaction vs =
   if vs == mempty
     then pure mempty
     else runTransaction $ do
+      tasks <- fmap Option $ case getOption (_viewSelector_tasks vs) of
+        Nothing -> pure Nothing
+        Just a -> do
+          tasks <- runQuery $ runSelectReturningList $ select $ all_ (_dbTask db)
+          pure $ Just (a, MMap.fromList ([(pk t, First t) | t <- tasks]))
       translations <- fmap Option $ case getOption $ _viewSelector_translations vs of
         Nothing -> pure Nothing
         Just a -> do
@@ -49,7 +54,8 @@ viewSelectorHandler runTransaction vs =
             Just (a, First $ notesEntityToView $ toList v)
       pure $
         View
-          { _view_translations = translations,
+          { _view_tasks = tasks,
+            _view_translations = translations,
             _view_verseRanges = (fmap . fmap) fst verses,
             _view_tagNotes = tagNotes,
             -- TODO: Just look at this. No one wants to read this...let alone understand it. I had to "type hole" my way to this...

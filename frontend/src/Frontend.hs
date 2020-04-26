@@ -47,10 +47,43 @@ frontend :: Frontend (R FrontendRoute)
 frontend =
   Frontend
     { _frontend_head = headSection,
-      _frontend_body = runAppWidget $ skeleton $ subRoute_ $ \case
-        FrontendRoute_Main -> appWidget (pure (Canon_Old Genesis, Nothing))
-        FrontendRoute_Reference -> appWidget =<< askRoute
+      _frontend_body = runAppWidget $ do
+        elClass "section" "section main-section" $ subRoute_ $ \case
+          FrontendRoute_Main -> appWidget1
+          FrontendRoute_Reference -> appWidget =<< askRoute
     }
+
+appWidget1 ::
+  forall m js t.
+  ( HasApp t m,
+    DomBuilder t m,
+    PostBuild t m,
+    MonadHold t m,
+    MonadFix m,
+    Prerender js t m,
+    PerformEvent t m,
+    MonadIO (Performable m)
+  ) =>
+  m ()
+appWidget1 = do
+  el "h1" $ text "Tasks"
+  resp <- maybeDyn =<< watchTasks
+  dyn_ $ ffor resp $ \case
+    Nothing ->
+      text "Loading..."
+    Just tasksDyn ->
+      dyn_ $ ffor tasksDyn $ \task ->
+        text $ T.pack $ show task
+  pure ()
+
+watchTasks ::
+  (HasApp t m, MonadHold t m, MonadFix m) =>
+  m (Dynamic t (Maybe (MonoidalMap TaskId Task)))
+watchTasks =
+  (fmap . fmap) (fmap (fmap getFirst . snd) . getOption . _view_tasks)
+    $ watchViewSelector
+    $ pure
+    $ mempty {_viewSelector_tasks = Option $ Just 1}
 
 headSection :: DomBuilder t m => m ()
 headSection = do
@@ -78,66 +111,6 @@ runAppWidget =
     "common/route"
     checkedFullRouteEncoder
     (BackendRoute_Listen :/ ())
-
-skeleton ::
-  (DomBuilder t m, MonadHold t m, PostBuild t m, MonadFix m, SetRoute t (R FrontendRoute) m) =>
-  m a ->
-  m a
-skeleton body = do
-  navBar
-  a <- elClass "section" "section main-section" body
-  pure a
-
-navBar ::
-  (DomBuilder t m, MonadHold t m, PostBuild t m, MonadFix m, SetRoute t (R FrontendRoute) m) =>
-  m ()
-navBar =
-  elAttr "nav" ("class" =: "navbar" <> "role" =: "navigation" <> "aria-label" =: "main navigation") $ do
-    divClass "navbar-brand"
-      $ elAttr "a" ("class" =: "navbar-item" <> "href" =: "https://bulma.io")
-      $ text "Tree of Life"
-    -- elAttr "img" ("src"=:"https://bulma.io/images/bulma-logo.png" <> "width"=:"112" <> "height"=:"28") blank
-
-    (burgerEl, ()) <- elAttr' "a" ("role" =: "button" <> "class" =: "navbar-burger burger" <> "aria-label" =: "menu") $ do
-      let ln = elAttr "span" ("aria-hidden" =: "true") blank
-      ln *> ln *> ln
-    menuIsActive <- toggle False $ domEvent Click burgerEl
-    elDynAttr "div" (ffor menuIsActive $ \active -> "class" =: ("navbar-menu" <> if active then " is-active" else "")) $ do
-      divClass "navbar-start" $ do
-        elClass "a" "navbar-item" $ text "Home"
-        elClass "a" "navbar-item" $ text "Documentation"
-        divClass "navbar-item has-dropdown is-hoverable" $ do
-          elClass "a" "navbar-link" $ text "More"
-          divClass "navbar-dropdown" $ do
-            elClass "a" "navbar-item" $ text "About"
-            elClass "a" "navbar-item" $ text "Jobs"
-            elClass "a" "navbar-item" $ text "Contact"
-            elClass "hr" "navbar-divider" blank
-            elClass "a" "navbar-item" $ text "Report an issue"
-        divClass "navbar-item"
-          $ divClass "field has-addons"
-          $ do
-            (refValue, enterPressed) <- elClass "p" "control" $ do
-              inputEl <- inputElement $ def & initialAttributes .~ ("class" =: "input" <> "type" =: "text" <> "placeholder" =: "Go to reference")
-              pure (value inputEl, keypress Enter $ _inputElement_element inputEl)
-            goClicked <- elClass "p" "control" $ do
-              (buttonEl, ()) <-
-                elAttr' "button" ("class" =: "button" <> "type" =: "button") $
-                  text "Go"
-              pure $ domEvent Click buttonEl
-            let goToValidRef =
-                  mapMaybe (either (const Nothing) Just . parseBibleReference) $
-                    current refValue
-                      <@ leftmost [goClicked, enterPressed]
-            setRoute $ (FrontendRoute_Reference :/) <$> goToValidRef
-      divClass "navbar-end"
-        $ divClass "navbar-item"
-        $ divClass "buttons"
-        $ do
-          elClass "a" "button is-primary"
-            $ el "strong"
-            $ text "Sign up"
-          elClass "a" "button is-light" $ text "Log in"
 
 type HasApp t m =
   ( MonadQuery t (ViewSelector SelectedCount) m,
