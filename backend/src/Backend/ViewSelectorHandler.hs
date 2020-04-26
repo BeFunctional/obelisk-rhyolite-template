@@ -5,9 +5,8 @@ module Backend.ViewSelectorHandler where
 import Backend.Schema
 import Backend.Transaction (Transaction, runQuery)
 import Common.App (View (..), ViewSelector (..))
-import Common.Prelude
 import qualified Data.Map.Monoidal as MMap
-import Data.Semigroup (First (..))
+import Data.Semigroup
 import Database.Beam
 
 viewSelectorHandler :: (Eq a, Monoid a) => (forall x. (forall mode. Transaction mode x) -> IO x) -> ViewSelector a -> IO (View a)

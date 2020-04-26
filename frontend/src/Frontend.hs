@@ -1,19 +1,20 @@
-{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE PatternGuards #-}
-{-# LANGUAGE RecursiveDo #-}
 {-# LANGUAGE TypeApplications #-}
 
 module Frontend where
 
 import Common.App
-import Common.Prelude
 import Common.Route
 import Common.Schema
+import Control.Monad
 import Control.Monad.Fix
+import Control.Monad.IO.Class (MonadIO)
+import Data.Functor.Identity (Identity (..))
+import Data.Map.Monoidal (MonoidalMap)
 import qualified Data.Map.Monoidal as MMap
-import Data.Semigroup (First (..))
+import Data.Semigroup (First (..), Option (..))
+import Data.Text (Text)
 import Obelisk.Configs (HasConfigs)
 import Obelisk.Frontend (Frontend (..))
 import Obelisk.Generated.Static
@@ -25,13 +26,17 @@ import Rhyolite.Frontend.App (RhyoliteWidget, functorToWire, runObeliskRhyoliteW
 frontend :: Frontend (R FrontendRoute)
 frontend =
   Frontend
-    { _frontend_head = headSection,
+    { _frontend_head = do
+        elAttr "meta" ("charset" =: "utf-8") blank
+        elAttr "meta" ("name" =: "viewport" <> "content" =: "width=device-width, initial-scale=1") blank
+        elAttr "link" ("rel" =: "stylesheet" <> "type" =: "text/css" <> "href" =: static @"css/style.css") blank
+        el "title" $ text "Obelisk+Rhyolite Example",
       _frontend_body = runAppWidget $ do
-        elClass "section" "section main-section" $ subRoute_ $ \case
-          FrontendRoute_Main -> appWidget
+        divClass "content" $ subRoute_ $ \case
+          FrontendRoute_Main -> mainView
     }
 
-appWidget ::
+mainView ::
   forall m js t.
   ( HasApp t m,
     DomBuilder t m,
@@ -43,7 +48,7 @@ appWidget ::
     MonadIO (Performable m)
   ) =>
   m ()
-appWidget = do
+mainView = do
   el "h1" $ text "Tasks"
   resp <- maybeDyn =<< watchTasks
   dyn_ $ ffor resp $ \case
@@ -67,14 +72,6 @@ watchTasks =
     $ watchViewSelector
     $ pure
     $ ViewSelector {_viewSelector_tasks = Option $ Just 1}
-
-headSection :: DomBuilder t m => m ()
-headSection = do
-  elAttr "meta" ("charset" =: "utf-8") blank
-  elAttr "meta" ("name" =: "viewport" <> "content" =: "width=device-width, initial-scale=1") blank
-  elAttr "link" ("rel" =: "stylesheet" <> "type" =: "text/css" <> "href" =: static @"css/style.css") blank
-  el "title" $ text "Obelisk+Rhyolite Example"
-  elAttr "script" ("defer" =: "defer" <> "src" =: "https://use.fontawesome.com/releases/v5.3.1/js/all.js") blank
 
 runAppWidget ::
   ( HasConfigs m,

@@ -1,12 +1,3 @@
 body {
-  max-height: 100vh;
-}
-
-.main-section {
-  padding-top: 0px;
-}
-
-.passage-pane {
-  max-height: calc(100vh - 53px);
-  overflow: auto;
+margin-left: 4em;
 }

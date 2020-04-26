@@ -3,13 +3,15 @@
 
 module Common.Schema where
 
-import Common.Prelude
+import Data.Aeson (FromJSON, ToJSON)
 import qualified Data.Aeson as Json
+import Data.Functor.Identity
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Time (LocalTime)
 import Database.Beam (Beamable, Columnar, PrimaryKey, Table (primaryKey))
 import Database.Beam.Backend.SQL.Types (SqlSerial)
+import GHC.Generics
 
 data TaskT f = Task
   { _taskId :: Columnar f (SqlSerial Int),

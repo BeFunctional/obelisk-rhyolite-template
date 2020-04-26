@@ -9,9 +9,9 @@ import Backend.RequestHandler (requestHandler)
 import Backend.Schema (withDb)
 import Backend.Transaction (Transaction, runTransaction)
 import Backend.ViewSelectorHandler (viewSelectorHandler)
-import Common.Prelude
 import Common.Route (BackendRoute (..), FrontendRoute, fullRouteEncoder)
 import Control.Exception.Safe (finally)
+import Control.Monad.IO.Class (MonadIO)
 import Obelisk.Backend (Backend (..))
 import Obelisk.Route
 import qualified Rhyolite.Backend.App as RhyoliteApp

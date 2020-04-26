@@ -52,7 +52,6 @@ library
     TypeFamilies
   exposed-modules:
     Common.App
-    Common.Prelude
     Common.Route
     Common.Schema
   ghc-options: -Wall

@@ -3,9 +3,10 @@ module Backend.NotifyHandler where
 import Backend.Schema
 import Backend.Transaction (Transaction)
 import Common.App (View (..), ViewSelector (..))
-import Common.Prelude
 import Data.Dependent.Sum (DSum ((:=>)))
+import Data.Functor.Identity
 import qualified Data.Map.Monoidal as MMap
+import Data.Semigroup
 import Database.Beam
 import Rhyolite.Backend.Listen (DbNotification (..))
 

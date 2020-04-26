@@ -10,8 +10,8 @@
 
 module Common.App where
 
-import Common.Prelude
 import Common.Schema
+import Control.Lens (_1)
 import Control.Lens.TH (makeLenses)
 import Data.Aeson (parseJSON, toJSON)
 import qualified Data.Aeson as Json
@@ -19,12 +19,18 @@ import Data.Aeson.GADT.TH (deriveJSONGADT)
 import Data.Aeson.TH (deriveJSON)
 import Data.Align (Align (nil), Semialign (alignWith))
 import qualified Data.Align as Align
+import Data.Coerce (coerce)
 import Data.Constraint.Extras.TH (deriveArgDict)
+import Data.Map (Map)
 import qualified Data.Map as Map
 import qualified Data.Map.Monoidal as MMap
+import Data.Map.Monoidal (MonoidalMap)
 import Data.MonoidMap (MonoidMap)
-import Data.Semigroup (First (..))
-import Data.Witherable (Witherable (wither))
+import Data.Semigroup (First (..), Option (..))
+import Data.Set (Set)
+import Data.Text (Text)
+import Data.Witherable (Filterable (mapMaybe), Witherable (wither))
+import GHC.Generics
 import Reflex.Patch (Additive, Group (negateG))
 import Reflex.Query.Class (Query (QueryResult, crop), SelectedCount (..))
 import Rhyolite.App (PositivePart (positivePart), standardPositivePart)

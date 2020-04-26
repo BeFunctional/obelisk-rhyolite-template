@@ -11,8 +11,8 @@
 module Backend.Schema where
 
 import Backend.Transaction (Transaction (..))
-import Common.Prelude
 import Common.Schema
+import Control.Monad
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Reader (ReaderT (..))
 import qualified Data.Aeson as Json
@@ -20,6 +20,7 @@ import Data.Aeson.GADT.TH (deriveJSONGADT)
 import qualified Data.ByteString.Lazy as LBS
 import Data.Constraint.Extras.TH (deriveArgDict)
 import Data.Dependent.Sum (DSum ((:=>)))
+import Data.Functor.Identity
 import Data.GADT.Compare.TH (deriveGCompare, deriveGEq)
 import Data.GADT.Show.TH (deriveGShow)
 import Data.Pool (Pool, withResource)
