@@ -20,7 +20,8 @@ data TranslationT f = Translation
   deriving (Generic, Beamable)
 
 instance Table TranslationT where
-  newtype PrimaryKey TranslationT f = TranslationId {unTranslationId :: Columnar f Int} deriving stock (Generic)
+  newtype PrimaryKey TranslationT f = TranslationId {unTranslationId :: Columnar f Int}
+    deriving stock (Generic)
     deriving anyclass (Beamable)
   primaryKey = TranslationId . _translationId
 
@@ -60,7 +61,8 @@ data BookT f = Book
   deriving (Generic, Beamable)
 
 instance Table BookT where
-  newtype PrimaryKey BookT f = BookId {unBookId :: Columnar f Int} deriving stock (Generic)
+  newtype PrimaryKey BookT f = BookId {unBookId :: Columnar f Int}
+    deriving stock (Generic)
     deriving anyclass (Beamable)
   primaryKey = BookId . _bookId
 
@@ -89,7 +91,8 @@ data VerseT f = VerseT
   deriving (Generic, Beamable)
 
 instance Table VerseT where
-  data PrimaryKey VerseT f = VerseId (PrimaryKey TranslationT f) (PrimaryKey BookT f) (Columnar f Int) (Columnar f Int) deriving stock (Generic)
+  data PrimaryKey VerseT f = VerseId (PrimaryKey TranslationT f) (PrimaryKey BookT f) (Columnar f Int) (Columnar f Int)
+    deriving stock (Generic)
     deriving anyclass (Beamable)
   primaryKey = VerseId <$> _verseTranslation <*> _verseBook <*> _verseChapter <*> _verseVerse
 
@@ -125,7 +128,8 @@ data TagT f = TagT
   deriving (Generic, Beamable)
 
 instance Table TagT where
-  newtype PrimaryKey TagT f = TagId (Columnar f (SqlSerial Int)) deriving stock (Generic)
+  newtype PrimaryKey TagT f = TagId (Columnar f (SqlSerial Int))
+    deriving stock (Generic)
     deriving anyclass (Beamable)
   primaryKey = TagId <$> _tagId
 
@@ -190,7 +194,8 @@ data TaggedRangeT f = TaggedRangeT
   deriving (Generic, Beamable)
 
 instance Table TaggedRangeT where
-  newtype PrimaryKey TaggedRangeT f = TaggedRangeId (Columnar f (SqlSerial Int)) deriving stock (Generic)
+  newtype PrimaryKey TaggedRangeT f = TaggedRangeId (Columnar f (SqlSerial Int))
+    deriving stock (Generic)
     deriving anyclass (Beamable)
   primaryKey = TaggedRangeId <$> _taggedrangeId
 
@@ -206,7 +211,8 @@ data TaggedRangeByWordT f = TaggedRangeByWordT
   deriving (Generic, Beamable)
 
 instance Table TaggedRangeByWordT where
-  data PrimaryKey TaggedRangeByWordT f = TaggedRangeByWordId (PrimaryKey TaggedRangeT f) (PrimaryKey TranslationT f) deriving stock (Generic)
+  data PrimaryKey TaggedRangeByWordT f = TaggedRangeByWordId (PrimaryKey TaggedRangeT f) (PrimaryKey TranslationT f)
+    deriving stock (Generic)
     deriving anyclass (Beamable)
   primaryKey = TaggedRangeByWordId <$> _taggedrangebywordForRange <*> _taggedrangebywordForTranslation
 
@@ -222,7 +228,8 @@ data TaggedRangeNoteT f = TaggedRangeNoteT
   deriving (Generic, Beamable)
 
 instance Table TaggedRangeNoteT where
-  newtype PrimaryKey TaggedRangeNoteT f = TaggedRangeNoteId (Columnar f (SqlSerial Int)) deriving stock (Generic)
+  newtype PrimaryKey TaggedRangeNoteT f = TaggedRangeNoteId (Columnar f (SqlSerial Int))
+    deriving stock (Generic)
     deriving anyclass (Beamable)
   primaryKey = TaggedRangeNoteId <$> _taggedrangenoteId
 
