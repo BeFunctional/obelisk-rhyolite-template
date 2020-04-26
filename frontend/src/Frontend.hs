@@ -72,13 +72,14 @@ appWidget1 = do
     Nothing ->
       text "Loading..."
     Just tasksDyn ->
-      dyn_ $ ffor tasksDyn $ \task ->
-        text $ T.pack $ show task
-  el "h2" $ text "Add random task"
-  btn <- button "Add"
-  void $ requestingIdentity $ ffor btn $ \_ ->
-    public $ PublicRequest_AddTask "This has to be a random title"
-  pure ()
+      void $ el "ul" $ simpleList (fmap MMap.elems tasksDyn) $ \task ->
+        el "li" $ dynText $ _taskTitle <$> task
+  el "h2" $ text "Add new task"
+  newTaskTitle :: Dynamic t Text <- value <$> inputElement def
+  addTaskTitle <- tag (current newTaskTitle) <$> do
+    fmap (domEvent Click . fst) $ el' "button" $ text "Add"
+  void $ requestingIdentity $ ffor addTaskTitle $ \title ->
+    public $ PublicRequest_AddTask title
 
 watchTasks ::
   (HasApp t m, MonadHold t m, MonadFix m) =>
@@ -93,9 +94,8 @@ headSection :: DomBuilder t m => m ()
 headSection = do
   elAttr "meta" ("charset" =: "utf-8") blank
   elAttr "meta" ("name" =: "viewport" <> "content" =: "width=device-width, initial-scale=1") blank
-  elAttr "link" ("rel" =: "stylesheet" <> "type" =: "text/css" <> "href" =: static @"css/bulma.min.css") blank
   elAttr "link" ("rel" =: "stylesheet" <> "type" =: "text/css" <> "href" =: static @"css/style.css") blank
-  el "title" $ text "Something"
+  el "title" $ text "Obelisk+Rhyolite Example"
   elAttr "script" ("defer" =: "defer" <> "src" =: "https://use.fontawesome.com/releases/v5.3.1/js/all.js") blank
 
 runAppWidget ::
