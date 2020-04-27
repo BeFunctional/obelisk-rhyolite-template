@@ -1,6 +1,6 @@
 # obelisk-rhyolite-template
 
-A template repository for your [Obelisk](https://github.com/obsidiansystems/obelisk)+[Rhyolite](https://github.com/obsidiansystems/rhyolite) projects (based on [3noch/something](https://github.com/3noch/something)).
+A template repository for your [Obelisk](https://haskell.zettel.page/2012403.html)+[Rhyolite](https://haskell.zettel.page/2012401.html) projects (based on [3noch/something](https://github.com/3noch/something)).
 
 ## What else is included
 
