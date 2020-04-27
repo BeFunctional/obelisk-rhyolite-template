@@ -24,7 +24,7 @@ backend =
       _backend_routeEncoder = fullRouteEncoder
     }
 
-backendRun :: (MonadIO m) => ((R BackendRoute -> Snap.Snap ()) -> IO a) -> m a
+backendRun :: MonadIO m => ((R BackendRoute -> Snap.Snap ()) -> IO a) -> m a
 backendRun serve = withDb $ \dbPool -> do
   let runTransaction' :: Transaction mode a -> IO a
       runTransaction' = runTransaction dbPool
