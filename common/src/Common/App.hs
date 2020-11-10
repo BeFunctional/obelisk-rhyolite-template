@@ -18,7 +18,6 @@ import qualified Data.Aeson as Json
 import Data.Aeson.GADT.TH (deriveJSONGADT)
 import Data.Aeson.TH (deriveJSON)
 import Data.Align (Align (nil), Semialign (alignWith))
-import qualified Data.Align as Align
 import Data.Coerce (coerce)
 import Data.Constraint.Extras.TH (deriveArgDict)
 import Data.Map (Map)
@@ -58,10 +57,6 @@ fmap concat $
 deriving instance Show a => Show (PrivateRequest a)
 
 -- ORPHANS
--- https://github.com/isomorphism/these/pull/121
-deriving newtype instance Semialign Option
-
-deriving newtype instance Align Option
 
 -- https://github.com/fumieval/witherable/pull/43
 instance Filterable Option where
@@ -103,10 +98,6 @@ instance Semialign ViewSelector where
   alignWith f a b =
     ViewSelector
       { _viewSelector_tasks = alignWith f (_viewSelector_tasks a) (_viewSelector_tasks b)
-      }
-  zipWith f a b =
-    ViewSelector
-      { _viewSelector_tasks = Align.zipWith f (_viewSelector_tasks a) (_viewSelector_tasks b)
       }
 
 instance Align ViewSelector where
