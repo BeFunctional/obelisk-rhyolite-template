@@ -4,7 +4,7 @@ A template repository for your [Obelisk](https://www.srid.ca/obelisk.html)+[Rhyo
 
 ## What else is included
 
-- [Beam](https://tathougies.github.io/beam/) ORM for postgres.
+- [Beam](https://haskell-beam.github.io/beam/) ORM for postgres.
 
 ## Running
 
