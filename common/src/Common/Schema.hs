@@ -10,15 +10,16 @@ import Data.Text (Text)
 import Database.Beam (Beamable, Columnar, PrimaryKey, Table (primaryKey))
 import Database.Beam.Backend.SQL.Types (SqlSerial)
 import GHC.Generics
+import Data.Int (Int32)
 
 data TaskT f = Task
-  { _taskId :: Columnar f (SqlSerial Int),
+  { _taskId :: Columnar f (SqlSerial Int32),
     _taskTitle :: Columnar f Text
   }
   deriving (Generic, Beamable)
 
 instance Table TaskT where
-  newtype PrimaryKey TaskT f = TaskId (Columnar f (SqlSerial Int))
+  newtype PrimaryKey TaskT f = TaskId (Columnar f (SqlSerial Int32))
     deriving stock (Generic)
     deriving anyclass (Beamable)
   primaryKey = TaskId <$> _taskId
