@@ -10,7 +10,7 @@
 , withHoogle ? false
 }:
 with obelisk;
-project ./. ({ hackGet, pkgs, ... }:
+project ./. ({ hackGet, pkgs, ... }@args:
   let
     beamSrc = hackGet dep/beam;
   in {
@@ -21,12 +21,12 @@ project ./. ({ hackGet, pkgs, ... }:
   ios.bundleName = "Obelisk+Rhyolite Example";
 
   packages = {
-    beam-core = beamSrc + /beam-core;
-    beam-postgres = beamSrc + /beam-postgres;
-    beam-migrate = beamSrc + /beam-migrate;
+    beam-core = beamSrc + "/beam-core";
+    beam-postgres = beamSrc + "/beam-postgres";
+    beam-migrate = beamSrc + "/beam-migrate";
   };
 
-  overrides = self: super: {
+  overrides = pkgs.lib.composeExtensions (import (hackGet ./dep/rhyolite) ({inherit (args) pkgs; inherit obelisk; })).haskellOverrides (self: super:{
     beam-postgres = pkgs.haskell.lib.dontCheck super.beam-postgres;  # Requires PG to run tests
-  };
+  });
 } // projectOverrides)

@@ -1,10 +1,10 @@
 # obelisk-rhyolite-template
 
-A template repository for your [Obelisk](https://haskell.zettel.page/2012403.html)+[Rhyolite](https://haskell.zettel.page/2012401.html) projects (based on [3noch/something](https://github.com/3noch/something)).
+A template repository for your [Obelisk](https://www.srid.ca/obelisk.html)+[Rhyolite](https://www.srid.ca/rhyolite.html) projects (based on [3noch/something](https://github.com/3noch/something)).
 
 ## What else is included
 
-- [Beam](https://tathougies.github.io/beam/) ORM for postgres.
+- [Beam](https://haskell-beam.github.io/beam/) for postgres.
 
 ## Running
 
