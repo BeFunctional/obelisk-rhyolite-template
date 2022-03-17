@@ -1,4 +1,5 @@
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE LambdaCase #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TypeFamilies #-}
 
@@ -36,6 +37,7 @@ backendRun serve = withDb $ \dbPool -> do
       (RhyoliteApp.QueryHandler $ viewSelectorHandler runTransaction')
       RhyoliteApp.functorFromWire
       RhyoliteApp.standardPipeline
-  flip finally wsFinalizer $ serve $ \case
-    BackendRoute_Missing :/ _ -> Snap.writeText "404 Page not found"
-    BackendRoute_Listen :/ _ -> handleListen
+  flip finally wsFinalizer $
+    serve $ \case
+      BackendRoute_Missing :/ _ -> Snap.writeText "404 Page not found"
+      BackendRoute_Listen :/ _ -> handleListen

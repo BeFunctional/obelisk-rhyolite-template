@@ -1,16 +1,20 @@
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveGeneric #-}
+{-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE StandaloneDeriving #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module Common.Schema where
 
 import Data.Aeson (FromJSON, ToJSON)
 import qualified Data.Aeson as Json
 import Data.Functor.Identity
+import Data.Int (Int32)
 import Data.Text (Text)
 import Database.Beam (Beamable, Columnar, PrimaryKey, Table (primaryKey))
 import Database.Beam.Backend.SQL.Types (SqlSerial)
 import GHC.Generics
-import Data.Int (Int32)
 
 data TaskT f = Task
   { _taskId :: Columnar f (SqlSerial Int32),
@@ -49,4 +53,3 @@ instance ToJSON TaskId
 instance Json.ToJSONKey TaskId
 
 instance Json.FromJSONKey TaskId
-

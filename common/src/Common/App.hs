@@ -1,12 +1,20 @@
 {-# LANGUAGE DeriveAnyClass #-}
+{-# LANGUAGE DeriveFoldable #-}
+{-# HLINT ignore "Use newtype instead of data" #-}
+{-# LANGUAGE DeriveFunctor #-}
+{-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE QuantifiedConstraints #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-
--- For deriveJSONGADT
 
 module Common.App where
 
@@ -22,8 +30,8 @@ import Data.Coerce (coerce)
 import Data.Constraint.Extras.TH (deriveArgDict)
 import Data.Map (Map)
 import qualified Data.Map as Map
-import qualified Data.Map.Monoidal as MMap
 import Data.Map.Monoidal (MonoidalMap)
+import qualified Data.Map.Monoidal as MMap
 import Data.MonoidMap (MonoidMap)
 import Data.Semigroup (First (..), Option (..))
 import Data.Set (Set)

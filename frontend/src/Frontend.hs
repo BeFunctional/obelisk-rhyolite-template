@@ -31,9 +31,10 @@ frontend =
         elAttr "meta" ("name" =: "viewport" <> "content" =: "width=device-width, initial-scale=1") blank
         elAttr "link" ("rel" =: "stylesheet" <> "type" =: "text/css" <> "href" =: static @"css/style.css") blank
         el "title" $ text "Obelisk+Rhyolite Example",
-      _frontend_body = runAppWidget $ do
-        divClass "content" $ subRoute_ $ \case
-          FrontendRoute_Main -> mainView
+      _frontend_body = runAppWidget $
+        divClass "content" $
+          subRoute_ $ \case
+            FrontendRoute_Main -> mainView
     }
 
 mainView ::
@@ -51,27 +52,33 @@ mainView ::
 mainView = do
   el "h1" $ text "Tasks"
   resp <- maybeDyn =<< watchTasks
-  dyn_ $ ffor resp $ \case
-    Nothing ->
-      text "Loading..."
-    Just tasksDyn ->
-      void $ el "ul" $ simpleList (fmap MMap.elems tasksDyn) $ \task ->
-        el "li" $ dynText $ _taskTitle <$> task
+  dyn_ $
+    ffor resp $ \case
+      Nothing ->
+        text "Loading..."
+      Just tasksDyn ->
+        void $
+          el "ul" $
+            simpleList (fmap MMap.elems tasksDyn) $ \task ->
+              el "li" $ dynText $ _taskTitle <$> task
   el "h2" $ text "Add new task"
   newTaskTitle :: Dynamic t Text <- value <$> inputElement def
-  addTaskTitle <- tag (current newTaskTitle) <$> do
-    fmap (domEvent Click . fst) $ el' "button" $ text "Add"
-  void $ requestingIdentity $ ffor addTaskTitle $ \title ->
-    public $ PublicRequest_AddTask title
+  addTaskTitle <-
+    tag (current newTaskTitle) <$> do
+      fmap (domEvent Click . fst) $ el' "button" $ text "Add"
+  void $
+    requestingIdentity $
+      ffor addTaskTitle $ \title ->
+        public $ PublicRequest_AddTask title
 
 watchTasks ::
   (HasApp t m, MonadHold t m, MonadFix m) =>
   m (Dynamic t (Maybe (MonoidalMap TaskId Task)))
 watchTasks =
-  (fmap . fmap) (fmap (fmap getFirst . snd) . getOption . _view_tasks)
-    $ watchViewSelector
-    $ pure
-    $ ViewSelector {_viewSelector_tasks = Option $ Just 1}
+  (fmap . fmap) (fmap (fmap getFirst . snd) . getOption . _view_tasks) $
+    watchViewSelector $
+      pure $
+        ViewSelector {_viewSelector_tasks = Option $ Just 1}
 
 runAppWidget ::
   ( HasConfigs m,

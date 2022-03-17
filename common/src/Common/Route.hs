@@ -1,8 +1,13 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
-{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeFamilies #-}
 
 module Common.Route where
 
@@ -14,6 +19,16 @@ import Control.Category
 import Data.Functor.Identity (Identity)
 import Data.Text (Text)
 import Obelisk.Route
+  ( Encoder,
+    FullRoute (FullRoute_Backend),
+    PageName,
+    R,
+    SegmentResult (PathEnd, PathSegment),
+    checkEncoder,
+    mkFullRouteEncoder,
+    unitEncoder,
+    pattern (:/),
+  )
 import Obelisk.Route.TH (deriveRouteComponent)
 
 data BackendRoute :: * -> * where
