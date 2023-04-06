@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+echo "N.B. You will need to delete the source tree created in deployment/local by this script before calling any \`ob\` command or you will have to watch \`ob\` spin forever as it tries to make sense of the contents of this directory."
+eval mkdir -p deployment/local
+eval cp -r $(nix-build -A exe --no-out-link)/* deployment/local
+eval mv deployment/local/backend deployment/local/server
+eval mkdir -p deployment/local/backend/config
+eval cp -r ./config deployment/local/
+eval cp -r ./dep deployment/local/
+eval cd deployment/local && ./server
