@@ -17,8 +17,8 @@ SET default_with_oids = false;
 
 CREATE TABLE public.task (
     id serial NOT NULL,
-    title character varying NOT NULL
+    title character varying NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
-
 
 ALTER TABLE public.task OWNER TO postgres;

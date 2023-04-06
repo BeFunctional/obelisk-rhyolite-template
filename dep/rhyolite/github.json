@@ -1,7 +1,7 @@
 {
-    "owner": "obsidiansystems",
-    "repo": "rhyolite",
-    "branch": "ts@multiple-domains",
-    "rev": "1c9b0164977fb0de8006733b7eb1793efe6985f1",
-    "sha256": "0n3d2flhd9dj5z93i62a900fadniyrvw0d45slp1fyzyry3ljf4z"
-  }
+  "owner": "BeFunctional",
+  "repo": "rhyolite",
+  "branch": "aa/ghc810",
+  "rev": "9ac691207960ee7d9b524f3d5762f15922a1213f",
+  "sha256": "62HM/YUmM8tHho24jOqgNAw2xnXEdUVrhGsMFcAQzYM="
+}

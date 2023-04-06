@@ -29,14 +29,17 @@ library
     , obelisk-backend
     , obelisk-route
     , postgresql-simple
+    , psql-simple-class
     , reflex
     , resource-pool
     , rhyolite-common
     , rhyolite-backend
+    , rhyolite-notify-listen
     , safe-exceptions
     , snap-core
     , text
     , time
+    , vessel
     , witherable
   exposed-modules:
     Backend

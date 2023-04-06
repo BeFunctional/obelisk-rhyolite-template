@@ -11,14 +11,19 @@ library
     , attoparsec
     , base
     , beam-core
+    , beam-postgres
     , containers
     , constraints-extras
+    , commutative-semigroups
     , dependent-sum-template
+    , dependent-monoidal-map
     , IntervalMap
     , lens
+    , monoid-map
     , monoidal-containers
     , mtl
     , obelisk-route
+    , patch
     , rhyolite-common
     , reflex
     , semialign
@@ -26,6 +31,7 @@ library
     , time
     , these
     , universe
+    , vessel
     , witherable
   default-extensions:
     BangPatterns

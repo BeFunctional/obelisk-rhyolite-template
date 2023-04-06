@@ -1,6 +1,10 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeFamilies #-}
 
 module Backend where
@@ -13,6 +17,7 @@ import Backend.ViewSelectorHandler (viewSelectorHandler)
 import Common.Route (BackendRoute (..), FrontendRoute, fullRouteEncoder)
 import Control.Exception.Safe (finally)
 import Control.Monad.IO.Class (MonadIO)
+import Database.PostgreSQL.Simple.Class (Psql)
 import Obelisk.Backend (Backend (..))
 import Obelisk.Route
 import qualified Rhyolite.Backend.App as RhyoliteApp
@@ -30,13 +35,11 @@ backendRun serve = withDb $ \dbPool -> do
   let runTransaction' :: Transaction mode a -> IO a
       runTransaction' = runTransaction dbPool
   (handleListen, wsFinalizer) <-
-    RhyoliteApp.serveDbOverWebsockets
-      (RhyoliteApp.convertPostgresPool dbPool)
+    RhyoliteApp.serveVessel
+      dbPool
       (requestHandler runTransaction')
       (notifyHandler runTransaction')
       (RhyoliteApp.QueryHandler $ viewSelectorHandler runTransaction')
-      RhyoliteApp.functorFromWire
-      RhyoliteApp.standardPipeline
   flip finally wsFinalizer $
     serve $ \case
       BackendRoute_Missing :/ _ -> Snap.writeText "404 Page not found"
