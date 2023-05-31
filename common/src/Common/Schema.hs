@@ -16,7 +16,6 @@ import Data.Text (Text)
 import Data.Time.Clock
 import Database.Beam (Beamable, Columnar, PrimaryKey, QGenExpr, Table (primaryKey), customExpr_)
 import Database.Beam.Backend.SQL.Types (SqlSerial)
-import Database.Beam.Postgres
 import GHC.Generics
 
 data TaskT f = Task
@@ -57,11 +56,3 @@ instance ToJSON TaskId
 instance Json.ToJSONKey TaskId
 
 instance Json.FromJSONKey TaskId
-
--- | SQL @CURRENT_TIMESTAMP@ function for use with 'UTCTime'
---
--- The @currentTimestamp_@ function defined in @Database.Beam.Query@ uses
--- @LocalTime@.  The function includes time zone information, however, so it
--- can be used with 'UTCTime'.
-currentTimestampUtc_ :: QGenExpr context Postgres s UTCTime
-currentTimestampUtc_ = customExpr_ "CURRENT_TIMESTAMP"
