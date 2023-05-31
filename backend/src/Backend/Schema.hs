@@ -30,6 +30,7 @@ import Data.Pool (Pool, withResource)
 import Data.String (fromString)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
+import Data.Time.Clock (UTCTime)
 import Database.Beam
 import Database.Beam.Migrate
 import Database.Beam.Migrate.Simple
@@ -73,3 +74,11 @@ concat
       deriveGEq ''Notification,
       deriveGCompare ''Notification
     ]
+
+-- | SQL @CURRENT_TIMESTAMP@ function for use with 'UTCTime'
+--
+-- The @currentTimestamp_@ function defined in @Database.Beam.Query@ uses
+-- @LocalTime@.  The function includes time zone information, however, so it
+-- can be used with 'UTCTime'.
+currentTimestampUtc_ :: QGenExpr context Postgres s UTCTime
+currentTimestampUtc_ = customExpr_ "CURRENT_TIMESTAMP"

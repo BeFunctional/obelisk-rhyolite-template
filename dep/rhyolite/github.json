@@ -1,7 +1,8 @@
 {
   "owner": "BeFunctional",
   "repo": "rhyolite",
-  "branch": "aa/ghc810",
-  "rev": "9ac691207960ee7d9b524f3d5762f15922a1213f",
-  "sha256": "62HM/YUmM8tHho24jOqgNAw2xnXEdUVrhGsMFcAQzYM="
+  "branch": "be/ghc810",
+  "private": false,
+  "rev": "99fad4d7842177fb1779b962ff8b0e7f51472256",
+  "sha256": "03jkaa9dc63ax6kxwjjr19mkqwi86w4c3m604kasy4ck1jvhdjif"
 }
