@@ -13,7 +13,7 @@ import qualified Data.Aeson as Json
 import Data.Functor.Identity
 import Data.Int (Int32)
 import Data.Text (Text)
-import Data.Time.Clock
+import Data.Time.Clock (UTCTime)
 import Database.Beam (Beamable, Columnar, PrimaryKey, QGenExpr, Table (primaryKey), customExpr_)
 import Database.Beam.Backend.SQL.Types (SqlSerial)
 import GHC.Generics

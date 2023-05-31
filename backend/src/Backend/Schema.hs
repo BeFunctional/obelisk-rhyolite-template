@@ -30,6 +30,7 @@ import Data.Pool (Pool, withResource)
 import Data.String (fromString)
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
+import Data.Time.Clock (UTCTime)
 import Database.Beam
 import Database.Beam.Migrate
 import Database.Beam.Migrate.Simple
