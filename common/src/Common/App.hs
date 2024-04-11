@@ -1,3 +1,4 @@
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveFoldable #-}
 {-# HLINT ignore "Use newtype instead of data" #-}
@@ -32,13 +33,12 @@ import Data.Map (Map)
 import qualified Data.Map as Map
 import Data.Map.Monoidal (MonoidalMap)
 import qualified Data.Map.Monoidal as MMap
-import Data.MonoidMap (MonoidMap)
 import Data.Semigroup (First (..), Option (..))
 import Data.Set (Set)
 import Data.Text (Text)
 import Data.Witherable (Filterable (mapMaybe), Witherable (wither))
 import GHC.Generics
-import Reflex.Patch (Additive, Group (negateG))
+import Reflex.Patch (Group (negateG))
 import Reflex.Query.Class (Query (QueryResult, crop), SelectedCount (..))
 import Rhyolite.App (PositivePart (positivePart), standardPositivePart)
 
@@ -63,17 +63,6 @@ fmap concat $
     ]
 
 deriving instance Show a => Show (PrivateRequest a)
-
--- ORPHANS
-
--- https://github.com/fumieval/witherable/pull/43
-instance Filterable Option where
-  mapMaybe f = (>>= Option . f)
-  {-# INLINE mapMaybe #-}
-
-instance Witherable Option where
-  wither f (Option x) = Option <$> wither f x
-  {-# INLINE wither #-}
 
 ------------------
 
@@ -113,13 +102,6 @@ instance Align ViewSelector where
 
 instance (Group a) => Group (ViewSelector a) where
   negateG = fmap negateG
-
-instance (Semigroup a) => Additive (ViewSelector a)
-
-instance (Ord k) => PositivePart (ViewSelector (MonoidMap k SelectedCount)) where
-  positivePart x =
-    let u = mapMaybe standardPositivePart x
-     in if u == mempty then Nothing else Just u
 
 instance Filterable ViewSelector where
   mapMaybe f x =

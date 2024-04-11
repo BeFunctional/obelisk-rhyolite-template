@@ -1,10 +1,7 @@
 let rfpath = ./dep/reflex-platform;
 in { system ? builtins.currentSystem, obelisk ? import ./.obelisk/impl {
   reflex-platform-func = args@{ ... }:
-    import rfpath (args // {
-      inherit system;
-      hlsSupport = true;
-    });
+    import rfpath (args // { inherit system; });
   inherit system;
   iosSdkVersion = "13.2";
   config.android_sdk.accept_license = true;
@@ -13,7 +10,11 @@ in { system ? builtins.currentSystem, obelisk ? import ./.obelisk/impl {
 with obelisk;
 
 project ./. ({ hackGet, pkgs, ... }@args:
-  let beamSrc = hackGet dep/beam;
+  let
+    hls = obelisk.nixpkgs.haskell-language-server.override {
+      inherit (obelisk.nixpkgs) haskell haskellPackages;
+      supportedGhcVersions = [ "8107" ];
+    };
   in {
     inherit withHoogle;
     android.applicationId = "ca.srid.obelisk-rhyolite.template";
@@ -21,20 +22,20 @@ project ./. ({ hackGet, pkgs, ... }@args:
     ios.bundleIdentifier = "ca.srid.obelisk-rhyolite.template";
     ios.bundleName = "Obelisk+Rhyolite Example";
 
-    packages = {
-      beam-core = beamSrc + "/beam-core";
-      beam-postgres = beamSrc + "/beam-postgres";
-      beam-migrate = beamSrc + "/beam-migrate";
-    };
+    packages = { };
 
     shellToolOverrides = ghc: super: {
       inherit (pkgs) nixfmt;
-      inherit (pkgs.haskellPackages) cabal-plan cabal-fmt;
+      inherit (pkgs.haskellPackages)
+        cabal-plan cabal-fmt;
+        haskell-language-server = hls;
     };
 
     overrides = pkgs.lib.composeExtensions (import (hackGet ./dep/rhyolite) ({
       inherit (args) pkgs;
       inherit obelisk;
+      inherit (args.pkgs.darwin.apple_sdk) sdk;
+      inherit (args.pkgs.darwin.apple_sdk.frameworks) Cocoa;
     })).haskellOverrides (self: super: {
       beam-postgres = pkgs.haskell.lib.dontCheck
         super.beam-postgres; # Requires PG to run tests

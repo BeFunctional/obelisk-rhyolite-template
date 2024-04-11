@@ -1,5 +1,11 @@
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE LambdaCase #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TypeApplications #-}
 
 module Frontend where
@@ -29,7 +35,7 @@ frontend =
     { _frontend_head = do
         elAttr "meta" ("charset" =: "utf-8") blank
         elAttr "meta" ("name" =: "viewport" <> "content" =: "width=device-width, initial-scale=1") blank
-        elAttr "link" ("rel" =: "stylesheet" <> "type" =: "text/css" <> "href" =: static @"css/style.css") blank
+        -- elAttr "link" ("rel" =: "stylesheet" <> "type" =: "text/css" <> "href" =: static @"css/style.css") blank
         el "title" $ text "Obelisk+Rhyolite Example",
       _frontend_body = runAppWidget $
         divClass "content" $
@@ -44,7 +50,7 @@ mainView ::
     PostBuild t m,
     MonadHold t m,
     MonadFix m,
-    Prerender js t m,
+    Prerender t m,
     PerformEvent t m,
     MonadIO (Performable m)
   ) =>
@@ -87,7 +93,7 @@ runAppWidget ::
     MonadHold t m,
     PostBuild t m,
     MonadFix m,
-    Prerender x t m
+    Prerender t m
   ) =>
   RoutedT t (R FrontendRoute) (RhyoliteWidget (ViewSelector SelectedCount) (ApiRequest () PublicRequest PrivateRequest) t m) a ->
   RoutedT t (R FrontendRoute) m a
