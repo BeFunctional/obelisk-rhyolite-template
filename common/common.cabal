@@ -14,10 +14,12 @@ library
     , beam-core
     , constraints
     , constraints-extras
+    , containers
     , dependent-map
     , dependent-sum
     , dependent-sum-template
     , lens
+    , monoidal-containers
     , mtl
     , obelisk-route
     , reflex
