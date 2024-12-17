@@ -1,32 +1,38 @@
-name: common
-version: 0.1
-cabal-version: >= 1.2
-build-type: Simple
+name:          common
+version:       0.1
+cabal-version: >=1.2
+build-type:    Simple
 
 library
-  hs-source-dirs: src
+  hs-source-dirs:     src
   build-depends:
-      aeson
+      adjunctions
+    , aeson
     , aeson-gadt-th
     , attoparsec
     , base
     , beam-core
-    , containers
+    , constraints
     , constraints-extras
+    , dependent-map
+    , dependent-sum
     , dependent-sum-template
-    , IntervalMap
     , lens
-    , monoidal-containers
     , mtl
     , obelisk-route
-    , rhyolite-common
     , reflex
+    , rhyolite-account-types
+    , rhyolite-common
     , semialign
+    , signed-data
+    , signed-data-clientsession
     , text
-    , time
+    , text-short
     , these
+    , time
     , universe
     , witherable
+
   default-extensions:
     BangPatterns
     ConstraintKinds
@@ -50,8 +56,10 @@ library
     TupleSections
     TypeApplications
     TypeFamilies
+
   exposed-modules:
     Common.App
     Common.Route
     Common.Schema
-  ghc-options: -Wall
+
+  ghc-options:        -Wall

@@ -1,51 +1,59 @@
-name: backend
-version: 0.1
-cabal-version: >= 1.8
-build-type: Simple
+name:          backend
+version:       0.1
+cabal-version: >=1.8
+build-type:    Simple
 
 library
-  hs-source-dirs: src
+  hs-source-dirs:     src
+
   if impl(ghcjs)
     buildable: False
+
   build-depends:
-      base
-    , aeson
+      aeson
     , aeson-gadt-th
+    , base
     , beam-core
-    , beam-migrate
     , beam-postgres
     , bytestring
     , common
     , constraints-extras
     , containers
-    , exceptions
     , dependent-sum
     , dependent-sum-template
-    , gargoyle-postgresql-connect
+    , exceptions
     , frontend
+    , gargoyle-postgresql-connect
     , lens
-    , monoidal-containers
     , mtl
     , obelisk-backend
     , obelisk-route
     , postgresql-simple
+    , psql-simple-beam
+    , psql-simple-class
     , reflex
     , resource-pool
-    , rhyolite-common
+    , rhyolite-account-backend
     , rhyolite-backend
+    , rhyolite-beam-db
+    , rhyolite-beam-orphans
+    , rhyolite-common
+    , rhyolite-notify-listen
+    , rhyolite-notify-listen-beam
     , safe-exceptions
     , snap-core
     , text
     , time
     , witherable
-  exposed-modules:
-    Backend
+
+  exposed-modules:    Backend
   other-modules:
     Backend.NotifyHandler
     Backend.RequestHandler
     Backend.Schema
     Backend.Transaction
     Backend.ViewSelectorHandler
+
   default-extensions:
     BangPatterns
     ConstraintKinds
@@ -69,17 +77,21 @@ library
     TupleSections
     TypeApplications
     TypeFamilies
-  ghc-options: -Wall
+
+  ghc-options:        -Wall
 
 executable backend
-  main-is: main.hs
+  main-is:        main.hs
   hs-source-dirs: src-bin
+
   if impl(ghcjs)
     buildable: False
+
   build-depends:
-      base
-    , backend
+      backend
+    , base
     , common
     , frontend
     , obelisk-backend
-  ghc-options: -threaded
+
+  ghc-options:    -threaded

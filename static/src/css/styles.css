@@ -1,0 +1,20 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@tailwind forms;
+@tailwind colors;
+
+/* Tailwind's `h-full` is always 100% the height of the parent so long as the parent has a defined height.
+This means that even body and html need full hight if any child elements are to be able to use `h-full`
+with the intent to fill the screen. */
+@layer base {
+    html {
+        @apply h-full;
+    }
+
+    body {
+        @apply h-full;
+        @apply overflow-hidden;
+    }
+
+}

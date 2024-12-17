@@ -1,10 +1,10 @@
-name: frontend
-version: 0.1
-cabal-version: >= 1.8
-build-type: Simple
+name:          frontend
+version:       0.1
+cabal-version: >=1.8
+build-type:    Simple
 
 library
-  hs-source-dirs: src
+  hs-source-dirs:     src
   build-depends:
       base
     , common
@@ -14,7 +14,6 @@ library
     , jsaddle
     , lens
     , MonadRandom
-    , monoidal-containers
     , obelisk-executable-config-lookup
     , obelisk-frontend
     , obelisk-generated-static
@@ -25,8 +24,8 @@ library
     , rhyolite-frontend
     , text
     , time
-  exposed-modules:
-    Frontend
+
+  exposed-modules:    Frontend
   default-extensions:
     BangPatterns
     ConstraintKinds
@@ -50,19 +49,22 @@ library
     TupleSections
     TypeApplications
     TypeFamilies
-  ghc-options: -Wall
+
+  ghc-options:        -Wall
 
 executable frontend
-  main-is: main.hs
+  main-is:        main.hs
   hs-source-dirs: src-bin
   build-depends:
       base
     , common
+    , frontend
     , obelisk-frontend
     , obelisk-route
     , reflex-dom
-    , frontend
+
   --TODO: Make these ghc-options optional
-  ghc-options: -threaded
-  if os(darwin)
-     ghc-options: -dynamic
+  ghc-options:    -threaded
+
+  if os(osx)
+    ghc-options: -dynamic
