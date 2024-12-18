@@ -16,10 +16,8 @@ import Common.Schema
 import Control.Monad
 import Control.Monad.Fix
 import Control.Monad.IO.Class (MonadIO)
-import Data.Functor.Identity (Identity (..))
 import Data.Text (Text)
 import Data.Vessel
-import Data.Vessel ((~>))
 import qualified Data.Vessel.Path as Path
 import Obelisk.Configs (HasConfigs)
 import Obelisk.Frontend (Frontend (..))

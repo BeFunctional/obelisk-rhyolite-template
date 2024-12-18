@@ -15,7 +15,6 @@ import Common.Route (BackendRoute (..), FrontendRoute, fullRouteEncoder)
 import Control.Exception.Safe (finally)
 import Control.Monad.IO.Class (MonadIO)
 import Data.Coerce (coerce)
-import Data.Monoid.DecidablyEmpty
 import Obelisk.Backend (Backend (..))
 import Obelisk.Route
 import qualified Rhyolite.Backend.App as RhyoliteApp

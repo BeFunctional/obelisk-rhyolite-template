@@ -16,12 +16,9 @@ import Data.Constraint.Extras.TH
 import Data.GADT.Compare.TH
 import Data.GADT.Show.TH
 import Data.Kind (Type)
-import Data.Monoid.DecidablyEmpty
 import Data.Text (Text)
 import Data.Vessel
-import qualified Data.Vessel as Vessel
 import Rhyolite.Vessel.App
-import Rhyolite.Vessel.Types (FullV)
 
 data PublicRequest a where
   PublicRequest_AddTask :: Text -> PublicRequest ()

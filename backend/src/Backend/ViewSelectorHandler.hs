@@ -20,11 +20,11 @@ vesselHandler ::
   (forall x. Transaction x -> IO x) ->
   AppVessel (Compose (MMap.MonoidalMap ClientKey) (Const SelectedCount)) ->
   IO (AppVessel (Compose (MMap.MonoidalMap ClientKey) Identity))
-vesselHandler runTransaction vs =
+vesselHandler runTransaction' vs =
   let path = Path.vessel AppV_Tasks ~> Path.identityV
    in case Path._path_from path vs of
         Just (Compose mapOfCliets) ->
-          runTransaction $ do
+          runTransaction' $ do
             tasks <- runQuery $ runSelectReturningList $ select $ all_ (_dbTask db)
             let updatedMap = fmap (const tasks) mapOfCliets
                 update =
