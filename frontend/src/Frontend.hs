@@ -17,24 +17,33 @@ import Control.Monad
 import Control.Monad.Fix
 import Control.Monad.IO.Class (MonadIO)
 import Data.Functor.Identity (Identity (..))
-import Data.Map.Monoidal (MonoidalMap)
-import qualified Data.Map.Monoidal as MMap
-import Data.Semigroup (First (..), Option (..))
 import Data.Text (Text)
+import Data.Vessel
+import Data.Vessel ((~>))
+import qualified Data.Vessel.Path as Path
 import Obelisk.Configs (HasConfigs)
 import Obelisk.Frontend (Frontend (..))
-import Obelisk.Generated.Static
 import Obelisk.Route.Frontend
 import Reflex.Dom.Core
 import Rhyolite.Api (ApiRequest, public)
-import Rhyolite.Frontend.App (RhyoliteWidget, functorToWire, runObeliskRhyoliteWidget, watchViewSelector)
+import Rhyolite.Frontend.App
+  ( RhyoliteWidget,
+    runObeliskRhyoliteWidget,
+    vesselToWire,
+    watch,
+  )
 
 frontend :: Frontend (R FrontendRoute)
 frontend =
   Frontend
     { _frontend_head = do
         elAttr "meta" ("charset" =: "utf-8") blank
-        elAttr "meta" ("name" =: "viewport" <> "content" =: "width=device-width, initial-scale=1") blank
+        elAttr
+          "meta"
+          ( "name" =: "viewport" <> "content"
+              =: "width=device-width, initial-scale=1"
+          )
+          blank
         -- elAttr "link" ("rel" =: "stylesheet" <> "type" =: "text/css" <> "href" =: static @"css/style.css") blank
         el "title" $ text "Obelisk+Rhyolite Example",
       _frontend_body = runAppWidget $
@@ -44,7 +53,7 @@ frontend =
     }
 
 mainView ::
-  forall m js t.
+  forall m t.
   ( HasApp t m,
     DomBuilder t m,
     PostBuild t m,
@@ -57,7 +66,7 @@ mainView ::
   m ()
 mainView = do
   el "h1" $ text "Tasks"
-  resp <- maybeDyn =<< watchTasks
+  resp <- watchTasks
   dyn_ $
     ffor resp $ \case
       Nothing ->
@@ -65,7 +74,7 @@ mainView = do
       Just tasksDyn ->
         void $
           el "ul" $
-            simpleList (fmap MMap.elems tasksDyn) $ \task ->
+            simpleList (pure tasksDyn) $ \task ->
               el "li" $ dynText $ _taskTitle <$> task
   el "h2" $ text "Add new task"
   newTaskTitle :: Dynamic t Text <- value <$> inputElement def
@@ -77,15 +86,6 @@ mainView = do
       ffor addTaskTitle $ \title ->
         public $ PublicRequest_AddTask title
 
-watchTasks ::
-  (HasApp t m, MonadHold t m, MonadFix m) =>
-  m (Dynamic t (Maybe (MonoidalMap TaskId Task)))
-watchTasks =
-  (fmap . fmap) (fmap (fmap getFirst . snd) . getOption . _view_tasks) $
-    watchViewSelector $
-      pure $
-        ViewSelector {_viewSelector_tasks = Option $ Just 1}
-
 runAppWidget ::
   ( HasConfigs m,
     TriggerEvent t m,
@@ -95,18 +95,35 @@ runAppWidget ::
     MonadFix m,
     Prerender t m
   ) =>
-  RoutedT t (R FrontendRoute) (RhyoliteWidget (ViewSelector SelectedCount) (ApiRequest () PublicRequest PrivateRequest) t m) a ->
+  RoutedT
+    t
+    (R FrontendRoute)
+    ( RhyoliteWidget
+        (AppVessel (Const SelectedCount))
+        (ApiRequest () PublicRequest PrivateRequest)
+        t
+        m
+    )
+    a ->
   RoutedT t (R FrontendRoute) m a
 runAppWidget =
-  runObeliskRhyoliteWidget
-    functorToWire
-    "common/route"
-    checkedFullRouteEncoder
-    (BackendRoute_Listen :/ ())
+  fmap snd
+    . runObeliskRhyoliteWidget
+      vesselToWire
+      "common/route"
+      checkedFullRouteEncoder
+      (BackendRoute_Listen :/ ())
 
 type HasApp t m =
-  ( MonadQuery t (ViewSelector SelectedCount) m,
+  ( MonadQuery t (AppVessel (Const SelectedCount)) m,
     Requester t m,
     Request m ~ ApiRequest () PublicRequest PrivateRequest,
     Response m ~ Identity
   )
+
+watchTasks ::
+  (HasApp t m, MonadHold t m, MonadFix m) =>
+  m (Dynamic t (Maybe [Task]))
+watchTasks = do
+  result <- watch $ pure $ Path.vessel AppV_Tasks ~> Path.identityV
+  return $ result

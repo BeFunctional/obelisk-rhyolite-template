@@ -25,6 +25,7 @@ library
     , rhyolite-frontend
     , text
     , time
+    , vessel
 
   exposed-modules:    Frontend
   default-extensions:
@@ -39,6 +40,7 @@ library
     EmptyDataDecls
     GADTs
     GeneralizedNewtypeDeriving
+    ImportQualifiedPost
     KindSignatures
     LambdaCase
     MultiParamTypeClasses

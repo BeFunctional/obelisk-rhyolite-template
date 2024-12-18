@@ -22,6 +22,7 @@ library
     , monoidal-containers
     , mtl
     , obelisk-route
+    , patch
     , reflex
     , rhyolite-account-types
     , rhyolite-common
@@ -33,6 +34,7 @@ library
     , these
     , time
     , universe
+    , vessel
     , witherable
 
   default-extensions:
@@ -47,6 +49,7 @@ library
     EmptyDataDecls
     GADTs
     GeneralizedNewtypeDeriving
+    ImportQualifiedPost
     KindSignatures
     LambdaCase
     MultiParamTypeClasses

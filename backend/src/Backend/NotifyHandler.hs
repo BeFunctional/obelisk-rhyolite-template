@@ -1,21 +1,35 @@
+{-# LANGUAGE GADTs #-}
+{-# LANGUAGE RankNTypes #-}
+
 module Backend.NotifyHandler where
 
 import Backend.Schema
-import Backend.Transaction (Transaction)
-import Common.App (View (..), ViewSelector (..))
+import Backend.Transaction
+import Common.App
 import Data.Dependent.Sum (DSum ((:=>)))
-import Data.Functor.Identity
 import qualified Data.Map.Monoidal as MMap
-import Data.Semigroup
+import Data.Maybe (fromMaybe)
+import Data.Vessel (Compose (Compose), Const, Identity (..), Proxy (Proxy), (~>))
+import qualified Data.Vessel as Vessel
+import qualified Data.Vessel.Path as Path
 import Database.Beam
-import Rhyolite.Backend.Listen (DbNotification (..))
+import Reflex.Query.Class (SelectedCount)
+import Rhyolite.Backend.App (ClientKey)
+import Rhyolite.DB.NotifyListen
 
-notifyHandler :: forall a. Monoid a => (forall x. (forall mode. Transaction mode x) -> IO x) -> DbNotification Notification -> ViewSelector a -> IO (View a)
-notifyHandler _runTransaction msg vs = case _dbNotification_message msg of
-  Notification_AddTask :=> Identity task ->
-    pure $ case getOption $ _viewSelector_tasks vs of
-      Nothing -> mempty
-      Just a ->
-        View
-          { _view_tasks = Option $ Just $ (a, MMap.singleton (primaryKey task) (First task))
-          }
+notifyHandler ::
+  (forall x. Transaction x -> IO x) ->
+  DbNotification Notification ->
+  AppVessel (Compose (MMap.MonoidalMap ClientKey) (Const SelectedCount)) ->
+  IO (AppVessel (Compose (MMap.MonoidalMap ClientKey) Identity))
+notifyHandler runTransaction msg vs = case _dbNotification_message msg of
+  Notification_AddTask :=> Identity _task ->
+    let path = Path.vessel AppV_Tasks ~> Path.identityV
+     in case Path._path_from path vs of
+          Just (Compose mapOfCliets) ->
+            runTransaction $ do
+              tasks <- runQuery $ runSelectReturningList $ select $ all_ (_dbTask db)
+              let updatedMap = fmap (const tasks) mapOfCliets
+                  update = Vessel.mapV (Compose . fmap Identity) $ Path._path_to path updatedMap
+              pure update
+          Nothing -> return Vessel.emptyV

@@ -1,10 +1,13 @@
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE DeriveGeneric #-}
 {-# LANGUAGE DerivingStrategies #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE GADTs #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
 
@@ -34,8 +37,7 @@ import Database.Beam.Postgres
 import Database.Beam.Postgres.Migrate
 import qualified Database.PostgreSQL.Simple as Pg
 import qualified Gargoyle.PostgreSQL.Connect as Gargoyle
-import Rhyolite.Backend.Listen (DbNotification (..), NotificationType (..), notifyChannel)
-import Rhyolite.Schema (SchemaName (..))
+import Rhyolite.DB.NotifyListen.Beam
 
 data Db f = Db
   { _dbTask :: f (TableEntity TaskT)
@@ -50,13 +52,13 @@ checkedPgDb :: CheckedDatabaseSettings Postgres Db
 checkedPgDb = defaultMigratableDbSettings
 
 withDb :: MonadIO m => (Pool Pg.Connection -> IO a) -> m a
-withDb f = liftIO
-  $ Gargoyle.withDb "db"
-  $ \pool -> do
-    withResource pool $ \conn ->
-      runBeamPostgres conn $
-        autoMigrate migrationBackend checkedPgDb
-    f pool
+withDb f = liftIO $
+  Gargoyle.withDb "db" $
+    \pool -> do
+      withResource pool $ \conn ->
+        runBeamPostgres conn $
+          autoMigrate migrationBackend checkedPgDb
+      f pool
 
 data Notification a where
   Notification_AddTask :: Notification Task
@@ -71,16 +73,3 @@ fmap concat $
       deriveGEq ''Notification,
       deriveGCompare ''Notification
     ]
-
-notify :: Notification a -> a -> Transaction mode ()
-notify n a = void $ do
-  let dontCare = ""
-      cmd = "NOTIFY " <> fromString notifyChannel <> ", ?"
-      notification =
-        DbNotification
-          { _dbNotification_schemaName = SchemaName dontCare,
-            _dbNotification_notificationType = NotificationType_Update,
-            _dbNotification_message = n :=> Identity a
-          }
-  Transaction $ ReaderT $ \conn ->
-    Pg.execute conn cmd [T.unpack $ T.decodeUtf8 $ LBS.toStrict $ Json.encode notification]

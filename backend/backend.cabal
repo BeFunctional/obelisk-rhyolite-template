@@ -14,6 +14,7 @@ library
     , aeson-gadt-th
     , base
     , beam-core
+    , beam-migrate
     , beam-postgres
     , bytestring
     , common
@@ -25,9 +26,11 @@ library
     , frontend
     , gargoyle-postgresql-connect
     , lens
+    , monoidal-containers
     , mtl
     , obelisk-backend
     , obelisk-route
+    , patch
     , postgresql-simple
     , psql-simple-beam
     , psql-simple-class
@@ -44,6 +47,7 @@ library
     , snap-core
     , text
     , time
+    , vessel
     , witherable
 
   exposed-modules:    Backend
@@ -66,6 +70,7 @@ library
     EmptyDataDecls
     GADTs
     GeneralizedNewtypeDeriving
+    ImportQualifiedPost
     KindSignatures
     LambdaCase
     MultiParamTypeClasses
