@@ -23,10 +23,13 @@ library
     , reflex-dom-core
     , rhyolite-common
     , rhyolite-frontend
+    , rhyolite-widgets
     , text
     , time
     , vessel
 
+  -- , react
+  -- , reflex-react
   exposed-modules:    Frontend
   default-extensions:
     BangPatterns

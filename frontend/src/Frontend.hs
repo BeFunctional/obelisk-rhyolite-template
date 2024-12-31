@@ -6,6 +6,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeApplications #-}
 
 module Frontend where
@@ -21,8 +22,10 @@ import Data.Vessel
 import qualified Data.Vessel.Path as Path
 import Obelisk.Configs (HasConfigs)
 import Obelisk.Frontend (Frontend (..))
+import Obelisk.Generated.Static (static)
 import Obelisk.Route.Frontend
 import Reflex.Dom.Core
+import Reflex.Dom.Widget.Form
 import Rhyolite.Api (ApiRequest, public)
 import Rhyolite.Frontend.App
   ( RhyoliteWidget,
@@ -42,12 +45,54 @@ frontend =
               =: "width=device-width, initial-scale=1"
           )
           blank
-        -- elAttr "link" ("rel" =: "stylesheet" <> "type" =: "text/css" <> "href" =: static @"css/style.css") blank
+        elAttr "link" ("rel" =: "stylesheet" <> "type" =: "text/css" <> "href" =: $(static "styles.css")) blank
         el "title" $ text "Obelisk+Rhyolite Example",
       _frontend_body = runAppWidget $
         divClass "content" $
           subRoute_ $ \case
             FrontendRoute_Main -> mainView
+    }
+
+taskInputWidget ::
+  forall m t.
+  ( DomBuilder t m,
+    PostBuild t m,
+    MonadHold t m,
+    MonadFix m
+  ) =>
+  m (Event t Text)
+taskInputWidget = do
+  (input, feedback) <- validationInputWithFeedback taskInputConfig
+  feedback
+
+  (submitBtn, _) <- el' "button" $ text "Add"
+  let submitClick = domEvent Click submitBtn
+  pure $ tagPromptlyDynValidation (value input) submitClick
+
+validateNonEmptyDyn ::
+  (Reflex t) =>
+  Dynamic t Text ->
+  DynValidation t () Text
+validateNonEmptyDyn = DynValidation . Compose . fmap validateNonEmpty
+
+taskInputConfig :: (DomBuilder t m) => ValidationConfig t m () Text Text
+taskInputConfig =
+  ValidationConfig
+    { _validationConfig_validation = validateNonEmptyDyn,
+      _validationConfig_errorText = const "Text is empty",
+      _validationConfig_initialAttributes =
+        "class" =: "px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500",
+      _validationConfig_validAttributes =
+        "class" =: "px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 border-green-500",
+      _validationConfig_invalidAttributes =
+        "class" =: "px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 border-red-500",
+      _validationConfig_feedback = \case
+        Left _ -> el "p" $ text "Task title cannot be empty"
+        Right _ -> blank,
+      _validationConfig_validate = never,
+      _validationConfig_validationM = Nothing,
+      _validationConfig_initialValue = mempty,
+      _validationConfig_setValue = Nothing
     }
 
 mainView ::
@@ -74,14 +119,14 @@ mainView = do
           el "ul" $
             simpleList (pure tasksDyn) $ \task ->
               el "li" $ dynText $ _taskTitle <$> task
+
   el "h2" $ text "Add new task"
-  newTaskTitle :: Dynamic t Text <- value <$> inputElement def
-  addTaskTitle <-
-    tag (current newTaskTitle) <$> do
-      fmap (domEvent Click . fst) $ el' "button" $ text "Add"
+
+  submitTask <- taskInputWidget
+
   void $
     requestingIdentity $
-      ffor addTaskTitle $ \title ->
+      ffor submitTask $ \title ->
         public $ PublicRequest_AddTask title
 
 runAppWidget ::

@@ -1,6 +1,6 @@
 # obelisk-rhyolite-template
 
-A template repository for your [Obelisk](https://www.srid.ca/obelisk.html)+[Rhyolite](https://www.srid.ca/rhyolite.html) projects (based on [3noch/something](https://github.com/3noch/something)).
+A template repository for your Obelisk+Rhyolite+React+Tailwind projects.
 
 ## What else is included
 
