@@ -45,6 +45,7 @@ library
     , rhyolite-notify-listen-beam
     , safe-exceptions
     , snap-core
+    , tagged
     , text
     , time
     , vessel
@@ -53,6 +54,14 @@ library
   exposed-modules:    Backend
   other-modules:
     Backend.NotifyHandler
+    Backend.Query.PGS.CAMA
+    Backend.Query.PGS.PostGis.Parcels
+    Backend.Query.PGS.PostGis.SOI
+    Backend.Query.PGS.PostGis.Tiger
+    Backend.Query.PGS.SOI
+    Backend.Query.PGS.Tiger
+    Backend.Query.PGS.WindTurbine
+    Backend.Query.Postgis.DSL
     Backend.RequestHandler
     Backend.Schema
     Backend.Transaction

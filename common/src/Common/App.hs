@@ -10,14 +10,17 @@
 
 module Common.App where
 
+import Common.App.PostGIS
 import Common.Schema
 import Data.Aeson.GADT.TH (deriveJSONGADT)
 import Data.Constraint.Extras.TH
 import Data.GADT.Compare.TH
 import Data.GADT.Show.TH
 import Data.Kind (Type)
+import Data.Monoid (First)
 import Data.Text (Text)
 import Data.Vessel
+import Data.Vessel.Identity (IdentityV)
 import Rhyolite.Vessel.App
 
 data PublicRequest a where
@@ -42,26 +45,25 @@ concat
 
 deriving instance Show a => Show (PrivateRequest a)
 
-data AppV (v :: ((Type -> Type) -> Type)) where
-  AppV_Tasks :: AppV (IdentityV [Task])
+data DataWarehouseAppV (v :: ((Type -> Type) -> Type)) where
+  DataWarehouseAppV_Tasks :: DataWarehouseAppV (IdentityV [Task])
+  DataWarehouseAppV_PostGIS :: DataWarehouseAppV (SubVessel () (Vessel PostGISV))
 
 concat
   <$> sequence
-    [ deriveJSONGADT ''AppV,
-      deriveArgDict ''AppV,
-      deriveGEq ''AppV,
-      deriveGCompare ''AppV,
-      deriveGShow ''AppV
+    [ deriveJSONGADT ''DataWarehouseAppV,
+      deriveArgDict ''DataWarehouseAppV,
+      deriveGEq ''DataWarehouseAppV,
+      deriveGCompare ''DataWarehouseAppV,
+      deriveGShow ''DataWarehouseAppV
     ]
 
-type AppVessel = Vessel AppV
+data DataWarehouseApp = DataWarehouseApp
 
-data OurApp = OurApp
-
-instance RhyoliteAuthApp OurApp where
-  type AuthCredential OurApp = ()
-  type PublicApi OurApp = PublicRequest
-  type PrivateApi OurApp = PrivateRequest
-  type PrivateV OurApp = Vessel AppV
-  type PersonalV OurApp = Vessel AppV
-  type PublicV OurApp = Vessel AppV
+instance RhyoliteAuthApp DataWarehouseApp where
+  type AuthCredential DataWarehouseApp = ()
+  type PublicApi DataWarehouseApp = PublicRequest
+  type PrivateApi DataWarehouseApp = PrivateRequest
+  type PublicV DataWarehouseApp = Vessel DataWarehouseAppV
+  type PrivateV DataWarehouseApp = Vessel DataWarehouseAppV
+  type PersonalV DataWarehouseApp = Vessel DataWarehouseAppV

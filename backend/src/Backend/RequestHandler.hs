@@ -5,7 +5,14 @@
 module Backend.RequestHandler where
 
 import Backend.Schema
-import Backend.Transaction (Transaction, runQuery)
+import Backend.Transaction
+  ( AppQuery (AppQuery),
+    Transaction,
+    mkAppTransaction,
+    notifyAppSide,
+    runAppQuery,
+    runQuery,
+  )
 import Common.App (PrivateRequest (..), PublicRequest (..))
 import Common.Schema
 import Database.Beam
@@ -14,16 +21,18 @@ import Rhyolite.Api (ApiRequest (..))
 import Rhyolite.Backend.App (RequestHandler (..))
 import Rhyolite.DB.NotifyListen (NotificationType (NotificationType_Insert), notify)
 
-requestHandler :: (forall x. Transaction x -> m x) -> RequestHandler (ApiRequest () PublicRequest PrivateRequest) m
+requestHandler ::
+  (forall x backend. Transaction backend x -> m x) ->
+  RequestHandler (ApiRequest () PublicRequest PrivateRequest) m
 requestHandler runTransaction =
   RequestHandler $
-    runTransaction . \case
+    \case
       ApiRequest_Public r -> case r of
-        PublicRequest_AddTask title -> do
+        PublicRequest_AddTask title -> runTransaction $ do
           tasks <- runQuery $ do
             Ext.runInsertReturningList $
               insert (_dbTask db) $
                 insertExpressions [Task default_ (val_ title)]
-          notify NotificationType_Insert Notification_AddTask $ head tasks -- TODO: don't head
+          notifyAppSide NotificationType_Insert Notification_AddTask $ head tasks -- TODO: don't head
       ApiRequest_Private _key r -> case r of
-        PrivateRequest_NoOp -> return ()
+        PrivateRequest_NoOp -> runTransaction $ return ()

@@ -12,9 +12,12 @@ library
     , attoparsec
     , base
     , beam-core
+    , bytestring
+    , cassava
     , constraints
     , constraints-extras
     , containers
+    , deepseq
     , dependent-map
     , dependent-sum
     , dependent-sum-template
@@ -23,17 +26,21 @@ library
     , mtl
     , obelisk-route
     , patch
+    , postgresql-simple
     , reflex
     , rhyolite-account-types
     , rhyolite-common
     , semialign
     , signed-data
     , signed-data-clientsession
+    , singletons
+    , tagged
     , text
     , text-short
     , these
     , time
     , universe
+    , vector
     , vessel
     , witherable
 
@@ -64,6 +71,13 @@ library
 
   exposed-modules:
     Common.App
+    Common.App.PostGIS
+    Common.Model.PGS.CAMA
+    Common.Model.PGS.SOI
+    Common.Model.PGS.Tiger
+    Common.Model.PGS.WindTurbine
+    Common.Model.Postgis.DSL
+    Common.Model.Postgis.KnownDatasets
     Common.Route
     Common.Schema
 

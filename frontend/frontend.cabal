@@ -6,9 +6,13 @@ build-type:    Simple
 library
   hs-source-dirs:     src
   build-depends:
-      base
+      aeson
+    , base
+    , bytestring
+    , cassava
     , common
     , containers
+    , dependent-sum
     , exceptions
     , ghcjs-dom
     , jsaddle
@@ -20,17 +24,35 @@ library
     , obelisk-generated-static
     , obelisk-route
     , random
+    , reflex
     , reflex-dom-core
     , rhyolite-common
     , rhyolite-frontend
     , rhyolite-widgets
+    , some
+    , tagged
     , text
     , time
+    , universe
+    , universe-some
     , vessel
 
   -- , react
   -- , reflex-react
-  exposed-modules:    Frontend
+  exposed-modules:
+    Frontend
+    Frontend.Map
+    Frontend.Map.Kepler.DSL
+    Frontend.Navigation
+    Frontend.Navigation.Routes
+    Frontend.Navigation.Sidebar
+    Frontend.SVG
+    Frontend.View.PostGIS
+    JSDOM.Kepler
+    JSDOM.Kepler.Config
+    Reflex.Common
+    Reflex.Kepler
+
   default-extensions:
     BangPatterns
     ConstraintKinds

@@ -40,7 +40,8 @@ data BackendRoute :: * -> * where
 
 data FrontendRoute :: * -> * where
   -- This type is used to define frontend routes, i.e. ones for which the backend will serve the frontend.
-  FrontendRoute_Main :: FrontendRoute ()
+  FrontendRoute_Dashboard :: FrontendRoute ()
+  FrontendRoute_Map :: FrontendRoute ()
 
 fullRouteEncoder ::
   Encoder (Either Text) Identity (R (FullRoute BackendRoute FrontendRoute)) PageName
@@ -52,7 +53,8 @@ fullRouteEncoder =
         BackendRoute_Listen -> PathSegment "listen" $ unitEncoder mempty
     )
     ( \case
-        FrontendRoute_Main -> PathEnd $ unitEncoder mempty
+        FrontendRoute_Dashboard -> PathEnd $ unitEncoder mempty
+        FrontendRoute_Map -> PathSegment "map" $ unitEncoder mempty
     )
 
 checkedFullRouteEncoder :: Encoder Identity Identity (R (FullRoute BackendRoute FrontendRoute)) PageName
