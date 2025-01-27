@@ -22,19 +22,24 @@ module Reflex.Kepler
     -- * Functions
     initKeplerGl,
     appendKeplerDataset,
-    appendKeplerDatasetImmediate,
     removeKeplerDataset,
     clearAllKeplerDatasets,
     hasKeplerDataset,
   )
 where
 
+import Control.Monad ((<=<))
 import Control.Monad.Fix (MonadFix)
+import Control.Monad.IO.Class (MonadIO (liftIO))
 import Data.Aeson (FromJSON, ToJSON, Value)
+import qualified Data.Aeson.Types as Aeson
+import Data.Int (Int32, Int64)
 import Data.String (IsString)
 import Data.Text (Text)
 import Data.Time (NominalDiffTime)
+import Data.Word (Word32)
 import qualified JSDOM.Kepler as JS
+import JSDOM.Types (JSM)
 import Language.Javascript.JSaddle (MonadJSM, liftJSM)
 import Reflex
 import Reflex.Common (liftJSM_)
@@ -103,7 +108,36 @@ type KeplerContext t m =
     GhcjsDomSpace ~ DomBuilderSpace m
   )
 
--- | Initialåize Kepler.gl with dynamic container ID
+liftJSM' ::
+  (PerformEvent t m, MonadJSM (Performable m), PostBuild t m, MonadHold t m) =>
+  Event t b ->
+  (b -> JSM a) ->
+  m (Event t a)
+liftJSM' n f = do
+  n' <- getPostBuild
+  n'' <- switchHold never (n <$ n')
+  performEvent $ ffor n'' $ \e -> liftJSM (f e)
+
+-- | Take some callback constructing JSM action, performs it, and returns two
+-- events: The first fires when the function is called, the second when the
+-- callback is called with the response.  This is used to get the results of
+-- Promises or async javascript functions in the form of events.
+withJSMCallback ::
+  ( PostBuild t m,
+    TriggerEvent t m,
+    PerformEvent t m,
+    MonadJSM (Performable m),
+    MonadIO m2
+  ) =>
+  ((a1 -> m2 ()) -> JSM a2) ->
+  m (Event t a2, Event t a1)
+withJSMCallback f = do
+  n' <- getPostBuild
+  (evT, onE) <- newTriggerEvent
+  getE <- liftJSM_ n' $ f (liftIO . onE)
+  pure (getE, evT)
+
+-- | Initialize Kepler.gl with dynamic container ID
 initKeplerGl ::
   KeplerContext t m =>
   ContainerId ->
@@ -125,23 +159,14 @@ appendKeplerDataset ::
   KeplerContext t m =>
   JS.KeplerInstance ->
   Event t DatasetConfig ->
-  m ()
-appendKeplerDataset instance_ datasetE =
-  performEvent_ $
-    ffor datasetE $ \dataset ->
-      liftJSM $ JS.loadDataset instance_ (mkKeplerDataset dataset)
-
--- | Helper to create a dataset and load it immediately
-appendKeplerDatasetImmediate ::
-  KeplerContext t m =>
-  JS.KeplerInstance ->
-  DatasetConfig ->
-  m ()
-appendKeplerDatasetImmediate instance_ cfg = do
-  pb <- getPostBuild
-  performEvent_ $
-    ffor pb $ \_ ->
-      liftJSM $ JS.loadDataset instance_ (mkKeplerDataset cfg)
+  m (Event t (Maybe [Int32]))
+appendKeplerDataset instance_ datasetE = switchHold never
+  <=< fmap updated . widgetHold (pure never)
+  $ ffor datasetE $ \dataset -> do
+    (onBuild, onFilter) <-
+      withJSMCallback
+        (JS.loadDataset instance_ (mkKeplerDataset dataset))
+    pure onFilter
 
 -- | Remove a dataset by ID
 removeKeplerDataset ::

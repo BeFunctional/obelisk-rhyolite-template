@@ -7,17 +7,20 @@ library
   hs-source-dirs:     src
   build-depends:
       aeson
+    , barbies
     , base
+    , beam-core
     , bytestring
-    , cassava
     , common
     , containers
     , dependent-sum
     , exceptions
     , ghcjs-dom
     , jsaddle
+    , jsaddle-dom
     , lens
     , MonadRandom
+    , monoid-statistics
     , monoidal-containers
     , obelisk-executable-config-lookup
     , obelisk-frontend
@@ -35,7 +38,9 @@ library
     , time
     , universe
     , universe-some
+    , vector
     , vessel
+    , vinyl
 
   -- , react
   -- , reflex-react
@@ -43,6 +48,7 @@ library
     Frontend
     Frontend.Map
     Frontend.Map.Kepler.DSL
+    Frontend.Map.Kepler.SummaryStats
     Frontend.Navigation
     Frontend.Navigation.Routes
     Frontend.Navigation.Sidebar

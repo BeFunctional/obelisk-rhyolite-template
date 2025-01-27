@@ -9,13 +9,14 @@
 module Backend.Transaction where
 
 import Backend.Schema (Notification)
+import Common.Model.Beam.Database
 import Control.Monad.Catch (MonadThrow)
 import Control.Monad.IO.Class (MonadIO (liftIO))
 import Control.Monad.Reader (MonadReader, MonadTrans, ReaderT (..), asks)
 import Data.Coerce (coerce)
 import Data.Kind (Type)
 import Data.Pool (Pool, withResource)
-import Database.Beam.Postgres (Pg, runBeamPostgresDebug)
+import Database.Beam.Postgres (Pg, Postgres, runBeamPostgresDebug)
 import qualified Database.PostgreSQL.Simple as Pg
 import Database.PostgreSQL.Simple.Class (Psql (..))
 import Rhyolite.DB.NotifyListen (NotificationType, notify)
@@ -32,7 +33,7 @@ data DbEnv = DbEnv
 
 data AppDb
 
-data WarehouseDb
+data WarehouseDb = WarehouseDb
 
 newtype AppQuery a = AppQuery {unAppQuery :: Pg a}
 
@@ -124,10 +125,13 @@ runAppQuery (AppQuery act) = Transaction $
   ReaderT $ \env ->
     runBeamPostgresDebug putStrLn (_transactionEnv_appDb env) act
 
-runWarehouseQuery :: WarehouseQuery a -> Transaction WarehouseDb a
-runWarehouseQuery (WarehouseQuery act) = Transaction $
+runWarehouseQuery' :: WarehouseQuery a -> Transaction WarehouseDb a
+runWarehouseQuery' (WarehouseQuery act) = Transaction $
   ReaderT $ \env ->
     runBeamPostgresDebug putStrLn (_transactionEnv_warehouseDb env) act
+
+runWarehouseQuery :: Pg a -> Transaction WarehouseDb a
+runWarehouseQuery = runWarehouseQuery' . WarehouseQuery
 
 runQuery :: Pg a -> Transaction AppDb a
 runQuery = runAppQuery . AppQuery

@@ -7,6 +7,7 @@ module Frontend.Navigation where
 import Common.Route
 import Control.Monad (when)
 import Control.Monad.Fix (MonadFix)
+import Control.Monad.Random (forM_)
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Data.Text (Text)
@@ -37,24 +38,23 @@ sidebarLayout ::
   m () ->
   m ()
 sidebarLayout currentRoute navbar content = do
-  elClass "div" "relative isolate flex min-h-screen w-full bg-white dark:bg-zinc-900" $ do
+  elClass "div" "relative isolate flex h-full w-full bg-white shadow-[0px_0px_0px_1px_rgba(9,9,11,0.07)] dark:bg-zinc-900 dark:shadow-[0px_0px_0px_1px_rgba(255,255,255,0.1)]" $ do
     -- Desktop sidebar
-    elClass "div" "fixed inset-y-0 left-0 w-64 max-lg:hidden" $
+    elClass "div" "fixed inset-y-0 left-0 w-64 border-r border-zinc-950/5 dark:border-white/5 max-lg:hidden" $
       sidebar currentRoute
 
     -- Mobile header
-    elClass "header" "flex items-center px-4 lg:hidden" $ do
+    elClass "header" "flex items-center border-b border-zinc-950/5 px-4 dark:border-white/5 lg:hidden" $ do
       elClass "div" "py-2.5" mobileMenuButton
       elClass "div" "min-w-0 flex-1" navbar
 
-    -- Main content
-    elClass "main" "flex flex-1 flex-col pb-2 lg:min-w-0 lg:pl-64 lg:pr-2 lg:pt-2" $ do
-      elClass "div" "grow p-6 lg:rounded-lg lg:bg-white lg:p-10 lg:shadow-sm lg:ring-1 lg:ring-zinc-950/5 dark:lg:bg-zinc-900 dark:lg:ring-white/10" $ do
-        elClass "div" "mx-auto max-w-6xl" content
+    -- Main content area
+    elClass "main" "flex-1 lg:pl-64 h-full bg-zinc-50 dark:bg-zinc-950" $ do
+      content
 
 sidebar :: (DomBuilder t m, SetRoute t (R FrontendRoute) m) => R FrontendRoute -> m ()
 sidebar currentRoute =
-  elClass "nav" "flex h-full min-h-0 flex-col" $ do
+  elClass "nav" "flex h-full min-h-0 flex-col bg-white dark:bg-zinc-900" $ do
     sidebarHeader
     sidebarBody currentRoute
     sidebarFooter
@@ -63,12 +63,12 @@ sidebarHeader :: DomBuilder t m => m ()
 sidebarHeader =
   elClass "div" "flex flex-col border-b border-zinc-950/5 p-4 dark:border-white/5" $
     elClass "div" "flex items-center gap-2" $ do
-      elClass "img" "h-8 w-8 rounded-lg" blank
-      elClass "span" "text-zinc-500 dark:text-zinc-400" $ text "Warehouse Viewer"
+      elClass "img" "h-8 w-8 rounded-lg bg-zinc-100 dark:bg-zinc-800" blank
+      elClass "span" "text-zinc-950 font-semibold dark:text-white" $ text "Warehouse Viewer"
 
 sidebarBody :: (DomBuilder t m, SetRoute t (R FrontendRoute) m) => R FrontendRoute -> m ()
 sidebarBody currentRoute =
-  elClass "div" "flex flex-1 flex-col overflow-y-auto p-4" $
+  elClass "div" "flex flex-1 flex-col gap-y-4 overflow-y-auto p-4" $
     elClass "div" "flex flex-col gap-0.5" $
       mapM_ (sidebarItem currentRoute) (Map.toList navigationLinks)
 
@@ -76,11 +76,11 @@ sidebarFooter :: DomBuilder t m => m ()
 sidebarFooter =
   elClass "div" "flex flex-col border-t border-zinc-950/5 p-4 dark:border-white/5" $
     elClass "div" "flex items-center gap-3" $ do
-      elClass "img" "h-8 w-8 rounded-full" blank
-      elClass "div" "text-sm" $ do
-        el "div" $ text "John Doe"
-        elClass "div" "text-zinc-500 dark:text-zinc-400" $
-          text "john@example.com"
+      elClass "img" "h-8 w-8 rounded-full bg-zinc-100 dark:bg-zinc-800" blank
+      elClass "div" "min-w-0" $ do
+        elClass "div" "truncate text-sm font-medium text-zinc-900 dark:text-zinc-100" $ text "Tim Pierson"
+        elClass "div" "truncate text-sm text-zinc-500 dark:text-zinc-400" $
+          text "tim@be.exchange"
 
 sidebarItem ::
   (DomBuilder t m, SetRoute t (R FrontendRoute) m) =>
@@ -89,16 +89,19 @@ sidebarItem ::
   m ()
 sidebarItem currentRoute (route, label) = do
   let isCurrent = currentRoute == route
-      baseClasses = "flex w-full items-center gap-3 rounded-lg px-2 py-2.5 text-left text-base/6 font-medium text-zinc-950 sm:py-2 sm:text-sm/5 dark:text-white"
-      hoverClasses = "hover:bg-zinc-950/5 dark:hover:bg-white/5"
-      currentClasses =
+      baseClasses = "group relative flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium"
+      textClasses =
+        if isCurrent
+          then "text-zinc-900 dark:text-white"
+          else "text-zinc-500 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-white"
+      bgClasses =
         if isCurrent
           then "bg-zinc-950/5 dark:bg-white/5"
-          else ""
+          else "hover:bg-zinc-950/5 dark:hover:bg-white/5"
 
-  (e, _) <- elClass' "a" (T.unwords [baseClasses, hoverClasses, currentClasses]) $ do
+  (e, _) <- elClass' "a" (T.unwords [baseClasses, textClasses, bgClasses]) $ do
     when isCurrent $
-      elClass "span" "absolute inset-y-2 -left-4 w-0.5 rounded-full bg-zinc-950 dark:bg-white" blank
+      elClass "span" "absolute inset-y-2.5 left-0 w-1 rounded-r-full bg-zinc-950 dark:bg-white" blank
     elClass "span" "truncate" $ text label
 
   setRoute $ (route <$ domEvent Click e)
@@ -112,7 +115,7 @@ mobileMenuButton = do
       ]
   pure $ domEvent Click e
   where
-    buttonClasses = "flex items-center gap-2 rounded-lg p-2 text-zinc-500 hover:text-zinc-600 dark:text-zinc-400 dark:hover:text-zinc-300"
+    buttonClasses = "flex items-center justify-center rounded-lg p-2.5 text-zinc-500 hover:bg-zinc-950/5 hover:text-zinc-900 dark:text-zinc-400 dark:hover:bg-white/5 dark:hover:text-white"
 
 initNavigation ::
   ( DomBuilder t m,

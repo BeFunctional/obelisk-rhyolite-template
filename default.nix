@@ -67,9 +67,136 @@ project ./. ({ hackGet, pkgs, ... }@args:
             "f0a59c0d4563eb1365ea8fd1a7c2d501db9db0ca";
 
         };
+      in let
+        framesOverrides = {
+
+          # unordered-containers = self.callHackageDirect {
+          #   pkg = "unordered-containers";
+          #   ver = "0.2.20";
+          #   sha256 = "sha256-ZYQ7OsAx/r2Vnk0ZeQANGdtV3DLViC5eV3zW41dydDc=";
+          # } { };
+
+          # base-orphans = self.callHackageDirect {
+          #   pkg = "base-orphans";
+          #   ver = "0.8.8.2";
+          #   sha256 = "sha256-QbcpILVWIiOa1cc0qhEpd9/wA4vbFmiN1x0FhoXYSB4=";
+          # } { };
+
+          # jsaddle = self.callHackageDirect {
+          #   pkg = "jsaddle";
+          #   ver = "0.9.8.3";
+          #   sha256 = "sha256-BCpVKMP6Q48zLu4V8g1TRSFV4L5Q7Oj79e1hD50sLDA=";
+          # } { };
+
+          # vector-binary-instances = callHackageDirectRevisionOverride {
+          #   pkg = "vector-binary-instances";
+          #   ver = "0.2.5.2";
+          #   sha256 = "sha256-b8f6JqdmTkphOcng4hnJNl/ogrLHhvVfsU8uQFHItV4=";
+          #   revision = "5";
+          #   editedCabalFile =
+          #     "sha256-m6jyxalSeCGrR7vZkd17dTO8qmhmLITE8WuHFlURfOs=";
+          # };
+
+          # heist = dontCheck (self.callHackageDirect {
+          #   pkg = "heist";
+          #   ver = "1.1.1.2";
+          #   sha256 = "sha256-fBT5djlDuwsHh2OGrzKdu0/Gp72QHaLv+9e+JMcQct0=";
+          # } { });
+
+          # vector-sized = self.callHackageDirect {
+          #   pkg = "vector-sized";
+          #   ver = "1.6.1";
+          #   sha256 = "sha256-//EOAwpEEQkdYF88U/bp0uybKleYHRmTWaKsxIZvCeQ=";
+          # } { };
+
+          # vector-algorithms = self.callHackageDirect {
+          #   pkg = "vector-algorithms";
+          #   ver = "0.9.0.3";
+          #   sha256 = "sha256-+OtQc7qpzIxRrJNDegfah3Fha8QFgV27c8rPP3iwXkU=";
+          # } { };
+
+          # lens = callHackageDirectRevisionOverride {
+          #   pkg = "lens";
+          #   ver = "5.1.1";
+          #   sha256 = "sha256-Nb0tb8iG1nGl2teZ8yICgasOoFMl4uSB/DtM9cIbuqQ=";
+          #   revision = "1";
+          #   editedCabalFile =
+          #     "sha256-xjOkgeab+RHZpu0R7xVoCduLHXx9KW/QMkm5O+OZ46c=";
+          # };
+
+          # io-streams = self.callHackageDirect {
+          #   pkg = "io-streams";
+          #   ver = "1.5.2.2";
+          #   sha256 = "sha256-BP+JqXp9w9wwrWVY7lm3g2ElQ0UmkCQ2N+wgeu0YsGs=";
+          # } { };
+
+          # vector = self.callHackageDirect {
+          #   pkg = "vector";
+          #   ver = "0.13.2.0";
+          #   sha256 = "sha256-nUS1LHIOkLcsJkli7WOcOAY1tnG6t6mL1By/Bmc87FU=";
+          # } { };
+
+          # microstache = self.callHackageDirect {
+          #   pkg = "microstache";
+          #   ver = "1.0.2.3";
+          #   sha256 = "sha256-asZ9Obu4R6R7+xdSMVEm3jnOnMk3PV1K7/3UrCytVvc=";
+          # } { };
+
+          # microstache = self.callHackageDirect {
+          #   pkg = "microstache";
+          #   ver = "1.0.3";
+          #   sha256 = "sha256-WfZmtsCPRTWtyQFHDKXy4sbvwZW75UeMqeDqo61plGE=";
+          # } { };
+
+          # syb = self.callHackageDirect {
+          #   pkg = "syb";
+          #   ver = "0.7.2.4";
+          #   sha256 = "sha256-a6pO7CDI78cJwtw1EyE9b9OjG6ooCCbFMIjcheu+/d0=";
+          # } { };
+
+          # optparse-applicative = dontCheck (callHackageDirectRevisionOverride {
+          #   pkg = "optparse-applicative";
+          #   ver = "0.18.1.0";
+          #   sha256 = "sha256-r1LFJ24uzbpFYGNsQfYPyW9Zjsbu1hcBr0pUekzc73E=";
+          #   revision = "1";
+          #   editedCabalFile =
+          #     "sha256-m6jyxaaSeCGrR7vZkd17dTO8qmhmLITE8WuHFlURfOs=";
+          # });
+
+          # criterion-measurement = dontCheck (self.callHackageDirect {
+          #   pkg = "criterion-measurement";
+          #   ver = "0.2.2.0";
+          #   sha256 = "sha256-RMM03eWEOZiGBkskSGEML8MhyttJjXpqz638IjWpP6A=";
+          # } { });
+
+          # criterion = dontCheck (self.callHackageDirect {
+          #   pkg = "criterion";
+          #   ver = "1.6.4.0";
+          #   sha256 = "sha256-0L8UN2CZk61WtTjgDv1FHzeLaVFElqEq655DKSV+GTE=";
+          # } { });
+
+          # criterion = dontCheck (self.callHackageDirect {
+          #   pkg = "criterion";
+          #   ver = "1.6.1.0";
+          #   sha256 = "sha256-wzKEFR0XMprJOjQZn240x52+HtUsAuyBdfdfvPf0XSQ=";
+          # } { });
+
+          # discrimination = self.callHackageDirect {
+          #   pkg = "discrimination";
+          #   ver = "0.5";
+          #   sha256 = "sha256-xB3iS+jvvoR17boBSFUa2RNlmWfpiNjpjqei3XmI8OI=";
+          # } { };
+
+          Frames = dontCheck (self.callHackageDirect {
+            pkg = "Frames";
+            ver = "0.7.4.2";
+            sha256 = "sha256-a/nJdGGOcsJAqbZy1mKnu1eFUaE4psAM6+4BW0pnAZ8=";
+          } { });
+        };
       in {
 
         vessel = (self.callCabal2nix "vessel" srcs.vessel { });
+        monoid-statistics = dontCheck super.monoid-statistics;
 
         monoid-map = (self.callCabal2nix "monoid-map" srcs.monoid-map { });
         # Needs updating for constraints-extras
@@ -79,12 +206,6 @@ project ./. ({ hackGet, pkgs, ... }@args:
         react = (self.callCabal2nix "react" srcs.react { });
         reflex-react =
           (self.callCabal2nix "reflex-react" srcs.reflex-react { });
-
-        commutative-semigroups = self.callHackageDirect {
-          pkg = "commutative-semigroups";
-          ver = "0.1.1.0";
-          sha256 = "sha256-QbakhTjZaaNb02qvtwXAp3yQwUyM70O4hucHru4q4NM=";
-        } { };
 
         constraints-extras = self.callHackageDirect {
           pkg = "constraints-extras";
@@ -125,6 +246,13 @@ project ./. ({ hackGet, pkgs, ... }@args:
           editedCabalFile =
             "sha256-ZUdnRK5CxclpVwzaBCvU054Bwz3qNzIKVo+pZ1n/oPA=";
         };
+
+        beam-postgres = dontCheck (self.callHackageDirect {
+          pkg = "beam-postgres";
+          ver = "0.5.4.2";
+          sha256 = "sha256-0P3ilVmJ2cvWTKPsKf7eivCpILwDscRSQqJ46GD96J8=";
+        } { });
+
         beam-core = self.callHackageDirect {
           pkg = "beam-core";
           ver = "0.10.3.0";
@@ -135,5 +263,5 @@ project ./. ({ hackGet, pkgs, ... }@args:
           ver = "0.5.3.1";
           sha256 = "l6TFQ69BIRkxoTSh7yarylfcIu5Y3CHanhzBi/fAWpQ=";
         } { };
-      });
+      } // framesOverrides);
   } // projectOverrides)

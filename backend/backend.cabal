@@ -12,11 +12,13 @@ library
   build-depends:
       aeson
     , aeson-gadt-th
+    , barbies
     , base
     , beam-core
     , beam-migrate
     , beam-postgres
     , bytestring
+    , cassava
     , common
     , constraints-extras
     , containers
@@ -48,19 +50,25 @@ library
     , tagged
     , text
     , time
+    , unordered-containers
+    , vector
     , vessel
+    , vinyl
     , witherable
 
-  exposed-modules:    Backend
-  other-modules:
+  exposed-modules:
+    Backend
+    Backend.KeplerConversion
     Backend.NotifyHandler
-    Backend.Query.PGS.CAMA
-    Backend.Query.PGS.PostGis.Parcels
-    Backend.Query.PGS.PostGis.SOI
-    Backend.Query.PGS.PostGis.Tiger
-    Backend.Query.PGS.SOI
-    Backend.Query.PGS.Tiger
-    Backend.Query.PGS.WindTurbine
+    Backend.Orphans
+    Backend.Query.Beam.Internal.Parcels
+    Backend.Query.Beam.Internal.SOI
+    Backend.Query.Beam.Internal.Tiger
+    Backend.Query.Beam.Internal.WindTurbine
+    Backend.Query.Beam.Parcels
+    Backend.Query.Beam.SOI
+    Backend.Query.Beam.Tiger
+    Backend.Query.Beam.WindTurbine
     Backend.Query.Postgis.DSL
     Backend.RequestHandler
     Backend.Schema

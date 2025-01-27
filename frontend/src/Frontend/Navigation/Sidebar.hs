@@ -33,10 +33,10 @@ sidebarLayout navbar sidebar content = do
         navbar
 
     -- Main content area
-    elClass "main" "flex flex-1 flex-col pb-2 lg:min-w-0 lg:pl-64 lg:pr-2 lg:pt-2" $ do
-      elClass "div" "grow p-6 lg:rounded-lg lg:bg-white lg:p-10 lg:shadow-sm lg:ring-1 lg:ring-zinc-950/5 dark:lg:bg-zinc-900 dark:lg:ring-white/10" $ do
-        elClass "div" "mx-auto max-w-6xl" $
-          content
+    elClass "main" "flex-1 lg:pl-64 overflow-hidden" $ do
+      -- Content wrapper with padding and scroll
+      elClass "div" "h-full overflow-y-auto" $
+        content
 
 sidebarNav :: DomBuilder t m => m ()
 sidebarNav = do

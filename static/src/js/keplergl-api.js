@@ -3,15 +3,18 @@ import ReactDOM from 'react-dom';
 import { Provider } from 'react-redux';
 import { createStore, combineReducers, applyMiddleware, compose } from 'redux';
 import { KeplerGl } from '@kepler.gl/components';
-import { keplerGlReducer } from '@kepler.gl/reducers';
-import { addDataToMap } from '@kepler.gl/actions';
+import { keplerGlReducer, filterDatasetCPU } from '@kepler.gl/reducers';
+import { addDataToMap, updateVisState } from '@kepler.gl/actions';
 import { enhanceReduxMiddleware } from '@kepler.gl/reducers';
+import { processCsvData } from '@kepler.gl/processors';
 import { StyleSheetManager } from 'styled-components';
+import { AutoSizer } from 'react-virtualized';
 
 export class KeplerGlAPI {
-  constructor(containerId, enableLogging = false) {
+  constructor(containerId, mapBoxApiToken, enableLogging = false) {
     this.enableLogging = enableLogging;
     this.log('Initializing KeplerGlAPI');
+    this.reducer = null;
 
     try {
       const container = document.getElementById(containerId);
@@ -22,6 +25,7 @@ export class KeplerGlAPI {
       }
 
       this.root = ReactDOM.createRoot(container);
+      this.reducer = keplerGlReducer;
       this.log('Root container created', { containerId });
 
       const reducers = combineReducers({
@@ -33,7 +37,7 @@ export class KeplerGlAPI {
       this.store = createStore(reducers, {}, compose(enhancers));
       this.log('Redux store initialized');
 
-      this.initialize();
+      this.initialize(mapBoxApiToken);
     } catch (error) {
       this.logError('Constructor', error);
       throw error;
@@ -72,18 +76,21 @@ export class KeplerGlAPI {
     }
   }
 
-  initialize() {
+  initialize(mapBoxApiToken) {
     try {
       this.log('Initializing Kepler element');
-      const KeplerElement = (props) => {
+      const KeplerElement = () => {
         return React.createElement(
           'div',
-          { style: { position: 'relative', left: 0, width: '100vw', height: '100vh' } },
-          React.createElement(KeplerGl, {
-            id: 'map',
-            width: props.width || 1200,
-            height: props.height || 800
-          })
+          { className: 'h-full w-full' },
+          React.createElement(AutoSizer, null, ({ width, height }) =>
+            React.createElement(KeplerGl, {
+              id: 'map',
+              width: width,
+              height: height,
+              mapboxApiAccessToken: mapBoxApiToken,
+            })
+          )
         );
       };
 
@@ -105,13 +112,15 @@ export class KeplerGlAPI {
     }
   }
 
-  loadDataset(dataset) {
+  loadDataset(dataset, onFilterFn = null) {
     try {
       if (!dataset) {
+        console.log('Dataset is required');
         throw new Error('Dataset is required');
       }
 
       if (!dataset.label || !dataset.id || !dataset.data) {
+        console.log('Dataset missing required properties (label, id, or data)');
         throw new Error('Dataset missing required properties (label, id, or data)');
       }
 
@@ -127,15 +136,63 @@ export class KeplerGlAPI {
             label: dataset.label,
             id: dataset.id
           },
-          data: dataset.data
+          data: processCsvData(dataset.data)
         }],
-        options: {
-          centerMap: true
+        config: {
+          mapStyle: { styleType: 'light' }
+        },
+        option: {
+          centerMap: true,
+          keepExistingConfig: true
         }
       }));
 
       this.log('Dataset loaded successfully', { datasetId: dataset.id });
+
+      if (onFilterFn !== null) {
+        this.log('Subscribing to dataset filter updates', { datasetId: dataset.id });
+        const originalReducer = this.store.getState().keplerGl;
+
+        const debounce = (callback, wait) => {
+          let timeoutId = null;
+          return (...args) => {
+            window.clearTimeout(timeoutId);
+            timeoutId = window.setTimeout(() => {
+              callback(...args);
+            }, wait);
+          };
+        };
+
+        const debouncedFilter = debounce(onFilterFn, 50);
+
+        // Create wrapped reducer that calls onFilterFn when filters change
+        const wrappedReducer = (state = originalReducer, action) => {
+          const newState = this.reducer(state, action);
+
+          // Check if action affects filters
+          if (action.type.includes('FILTER') && dataset.id) {
+            this.log('Dataset filter change detected', { datasetId: dataset.id });
+
+            const curDataset = newState.map.visState.datasets[dataset.id];
+            const filteredDataIdxs = curDataset.filteredIndexForDomain;
+
+            // Pass the indices array directly
+            debouncedFilter(filteredDataIdxs);
+          }
+
+          return newState;
+        };
+
+        // Replace reducer to intercept filter changes
+        this.store.replaceReducer(combineReducers({
+          keplerGl: wrappedReducer
+        }));
+
+        this.log('Dataset filter updates subscribed', { datasetId: dataset.id });
+      }
+
     } catch (error) {
+      console.log('Error while loading dataset:', error);
       this.logError('loadDataset', error);
       throw error;
     }

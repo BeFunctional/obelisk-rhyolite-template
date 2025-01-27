@@ -12,11 +12,13 @@
 module Frontend where
 
 import Common.App
+import Common.Orphans ()
 import Common.Route
 import Common.Schema
 import Control.Monad
 import Control.Monad.Fix
 import Control.Monad.IO.Class (MonadIO (liftIO))
+import Data.Aeson.Types ()
 import Data.Map.Strict (Map)
 import qualified Data.Map.Strict as Map
 import Data.Text (Text)
@@ -48,9 +50,9 @@ sidebarFooter = do
   elClass "div" "flex items-center gap-3" $ do
     elClass "img" "h-8 w-8 rounded-full" blank
     elClass "div" "text-sm" $ do
-      el "div" $ text "John Doe"
+      el "div" $ text "Tim Pierson"
       elClass "div" "text-zinc-500 dark:text-zinc-400" $
-        text "john@example.com"
+        text "tim@be.exchange"
 
 bundleSrc :: Text
 bundleSrc = $(static "bundle.min.js")
@@ -70,7 +72,7 @@ frontend =
         elAttr "link" ("rel" =: "stylesheet" <> "type" =: "text/css" <> "href" =: $(static "styles.css")) blank
         el "title" $ text "Obelisk+Rhyolite Example",
       _frontend_body = runAppWidget $
-        divClass "content" $ do
+        divClass "h-screen" $ do
           currentRoute <- askRoute
           let ini = initNavigation (FrontendRoute_Dashboard :/ ()) subRoutes
               subRoutes = subRoute_ $ \case
@@ -124,39 +126,39 @@ _taskInputConfig =
       _validationConfig_setValue = Nothing
     }
 
-_mainView ::
-  forall m t.
-  ( HasApp t m,
-    DomBuilder t m,
-    PostBuild t m,
-    MonadHold t m,
-    MonadFix m,
-    Prerender t m,
-    PerformEvent t m,
-    MonadIO (Performable m)
-  ) =>
-  m ()
-_mainView = do
-  el "h1" $ text "Tasks"
-  resp <- _watchTasks
-  dyn_ $
-    ffor resp $ \case
-      Nothing ->
-        text "Loading..."
-      Just tasksDyn ->
-        void $
-          el "ul" $
-            simpleList (pure tasksDyn) $ \task ->
-              el "li" $ dynText $ _taskTitle <$> task
+-- _mainView ::
+--   forall m t.
+--   ( HasApp t m,
+--     DomBuilder t m,
+--     PostBuild t m,
+--     MonadHold t m,
+--     MonadFix m,
+--     Prerender t m,
+--     PerformEvent t m,
+--     MonadIO (Performable m)
+--   ) =>
+--   m ()
+-- _mainView = do
+--   el "h1" $ text "Tasks"
+--   resp <- _watchTasks
+--   dyn_ $
+--     ffor resp $ \case
+--       Nothing ->
+--         text "Loading..."
+--       Just tasksDyn ->
+--         void $
+--           el "ul" $
+--             simpleList (pure tasksDyn) $ \task ->
+--               el "li" $ dynText $ _taskTitle <$> task
 
-  el "h2" $ text "Add new task"
+-- el "h2" $ text "Add new task"
 
-  submitTask <- _taskInputWidget
+-- submitTask <- _taskInputWidget
 
-  void $
-    requestingIdentity $
-      ffor submitTask $ \title ->
-        public $ PublicRequest_AddTask title
+-- void $
+--   requestingIdentity $
+--     ffor submitTask $ \title ->
+--       public $ PublicRequest_AddTask title
 
 runAppWidget ::
   ( HasConfigs m,
@@ -193,12 +195,12 @@ type HasApp t m =
     Response m ~ Identity
   )
 
-_watchTasks ::
-  (HasApp t m, MonadHold t m, MonadFix m) =>
-  m (Dynamic t (Maybe [Task]))
-_watchTasks = do
-  watch $
-    pure $
-      Vessel.publicP
-        ~> Path.vessel DataWarehouseAppV_Tasks
-        ~> Path.identityV
+-- _watchTasks ::
+--   (HasApp t m, MonadHold t m, MonadFix m) =>
+--   m (Dynamic t (Maybe [Task]))
+-- _watchTasks = do
+--   watch $
+--     pure $
+--       Vessel.publicP
+--         ~> Path.vessel DataWarehouseAppV_Tasks
+--         ~> Path.identityV

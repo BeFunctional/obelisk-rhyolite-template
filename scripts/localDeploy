@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+
+set -o errexit
+set -o nounset
+set -o pipefail
+#set -o xtrace
+
+##############################################################################
+
+declare deploy_path='test-app'
+
+declare flag_keep=false
+
+##############################################################################
+
+error() {
+  echo "error: $*" 1>&2
+  exit 1
+}
+
+usage() {
+  echo "Usage: ${0} [OPTION]"
+  echo '  Options:'
+  echo '    -h, --help    show this help text'
+  echo '    -k, --keep    keep the deployment directory'
+}
+
+usage_error() {
+  usage 1>&2
+  exit 2
+}
+
+clean_deployment_dir() {
+  if [ "${flag_keep}" == true ] ; then
+    echo '###################################################################'
+    echo '# Keeping the following deployment directory:'
+    echo "#   ${deploy_path}"
+    echo '# You need to delete this directory before running any "ob" command'
+    echo '# or the command will spin forever as it tries to make sense of the'
+    echo '# contents.'
+    echo '###################################################################'
+  else
+    echo "Deleting deployment directory after a delay: ${deploy_path}"
+    sleep 1
+    rm -rf "${deploy_path}"
+  fi
+}
+
+##############################################################################
+
+while [ $# -gt 0 ] ; do
+  case "$1" in
+    '-h' | '--help' )
+      usage
+      exit 0
+      ;;
+    '-k' | '--keep' )
+      flag_keep=true
+      shift
+      ;;
+    * )
+      usage_error
+      ;;
+  esac
+done
+
+if [ -e "${deploy_path}" ] ; then
+  error "deploy path already exists: ${deploy_path}"
+fi
+mkdir "${deploy_path}"
+trap clean_deployment_dir INT
+
+nix-build -A exe --no-out-link
+
+declare outdir
+outdir="$(nix-build -A exe --no-out-link 2>/dev/null)"
+for path in "${outdir}"/* ; do
+  ln -s "${path}" "${deploy_path}"
+done
+
+cp -r config "${deploy_path}"
+
+(cd "${deploy_path}" && ./backend)

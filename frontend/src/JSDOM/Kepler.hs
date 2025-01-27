@@ -8,13 +8,16 @@
 
 module JSDOM.Kepler where
 
-import Control.Monad (void)
+import Control.Lens ((^.))
+import Control.Monad (void, (<=<))
 import Data.Aeson (FromJSON, ToJSON, Value, object, (.=))
+import Data.Int (Int32)
 import Data.Text (Text)
 import qualified Data.Text as T
+import Debug.Trace (traceM)
 import GHC.Generics (Generic)
 import Language.Javascript.JSaddle
-  ( FromJSVal (fromJSVal),
+  ( FromJSVal (fromJSVal, fromJSValListOf),
     JSM,
     JSVal,
     Object (Object),
@@ -22,7 +25,11 @@ import Language.Javascript.JSaddle
     call,
     eval,
     getProp,
+    js,
+    jsNull,
+    valToNumber,
   )
+import Language.Javascript.JSaddle.Object (fun, function)
 
 -- | Now we only need to track if Kepler has been initialized
 newtype KeplerInstance = KeplerInstance
@@ -49,20 +56,40 @@ instance ToJSVal KeplerDataset where
           "data" .= data_ dataset
         ]
 
+-- | TODO: private api token from config; this one is public.
 initKeplerGl :: Text -> Bool -> JSM (Maybe KeplerInstance)
 initKeplerGl containerId doLogging = do
   containerId' <- toJSVal containerId
   doLogging' <- toJSVal doLogging
-  f <- evalBundleFunction "initKeplerGl" ["containerId"]
-  result <- call f f [containerId', doLogging']
+  apiToken <- toJSVal ("pk.eyJ1IjoibzFsbzAxb2wxbyIsImEiOiJjbTV5NXd5cWgwZmxiMnFxNnJnYXJ3M3ZrIn0.b9MMKkqyYNJKsdWUjKw3zQ" :: Text)
+  f <- evalBundleFunction "initKeplerGl" ["containerId", "mapBoxApiToken", "enableLogging"]
+  result <- call f f [containerId', apiToken, doLogging']
   store' <- getProp "store" (Object result)
   pure $ Just $ KeplerInstance store'
 
-loadDataset :: KeplerInstance -> KeplerDataset -> JSM ()
-loadDataset _ dataset = do
+-- | A js callback constructor.  It's expected that `action` will effectively take the @Maybe a@ and stick it into an event and return JSM ().
+jsCallback :: forall a. FromJSVal a => (Maybe a -> JSM ()) -> JSM JSVal
+jsCallback action =
+  toJSVal
+    =<< function
+      ( fun $ \a b [i] -> do
+          i' <- fromJSVal @a i
+          action i'
+      )
+
+loadDataset :: KeplerInstance -> KeplerDataset -> (Maybe [Int32] -> JSM ()) -> JSM ()
+loadDataset _ dataset onFilterAction = do
   dataset' <- toJSVal dataset
-  f <- evalBundleFunction "loadDataset" ["dataset"]
-  void $ call f f [dataset']
+  callback <- toJSVal
+    <=< function
+    $ \_ _ args -> do
+      case args of
+        [jsvs] -> do
+          onFilterAction =<< fromJSValListOf @Int32 jsvs
+        _ -> onFilterAction Nothing
+  let jsNull' = jsNull
+  f <- evalBundleFunction "loadDataset" ["dataset", "onFilterFn"]
+  void $ call f f [dataset', callback]
 
 -- | New function to remove a dataset
 removeDataset :: KeplerInstance -> Text -> JSM ()

@@ -10,10 +10,10 @@ library
     , aeson
     , aeson-gadt-th
     , attoparsec
+    , barbies
     , base
     , beam-core
     , bytestring
-    , cassava
     , constraints
     , constraints-extras
     , containers
@@ -22,17 +22,17 @@ library
     , dependent-sum
     , dependent-sum-template
     , lens
+    , monoid-statistics
     , monoidal-containers
     , mtl
     , obelisk-route
     , patch
-    , postgresql-simple
     , reflex
     , rhyolite-account-types
     , rhyolite-common
+    , scientific
     , semialign
     , signed-data
-    , signed-data-clientsession
     , singletons
     , tagged
     , text
@@ -40,8 +40,10 @@ library
     , these
     , time
     , universe
+    , unordered-containers
     , vector
     , vessel
+    , vinyl
     , witherable
 
   default-extensions:
@@ -72,13 +74,18 @@ library
   exposed-modules:
     Common.App
     Common.App.PostGIS
-    Common.Model.PGS.CAMA
-    Common.Model.PGS.SOI
-    Common.Model.PGS.Tiger
-    Common.Model.PGS.WindTurbine
+    Common.Model.Beam.Database
+    Common.Model.Beam.Expressions.GeoJSON
+    Common.Model.Beam.Parcels
+    Common.Model.Beam.SOI
+    Common.Model.Beam.Tiger
+    Common.Model.Beam.WindTurbine
+    Common.Model.KeplerSpec
     Common.Model.Postgis.DSL
     Common.Model.Postgis.KnownDatasets
+    Common.Orphans
     Common.Route
     Common.Schema
+    Common.Statistics.Monoid
 
   ghc-options:        -Wall

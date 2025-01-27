@@ -3,18 +3,24 @@
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
-{-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeOperators #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 module Common.App.PostGIS where
 
+import Common.Model.Beam.Parcels
+import Common.Model.Beam.SOI
+import Common.Model.Beam.Tiger
+import Common.Model.Beam.WindTurbine
+import Common.Model.KeplerSpec
 import Common.Model.Postgis.DSL
 import Data.Aeson.GADT.TH (deriveJSONGADT)
 import Data.Constraint.Extras.TH
+import Data.Functor.Product (Product (..))
 import Data.GADT.Compare.TH
 import Data.GADT.Show.TH
 import Data.Kind (Type)
@@ -26,125 +32,23 @@ import Data.Vessel
 data PostGISV (v :: ((Type -> Type) -> Type)) where
   -- Parcels
   PostGISV_AlbanyParcels ::
-    PostGISV (IdentityV (First (Either Text [GeometryResult 'ParcelId])))
+    PostGISV (IdentityV (First (Either Text (KeplerData (KeplerBarbie AlbanyParcelT)))))
   PostGISV_LaramieParcels ::
-    PostGISV (IdentityV (First (Either Text [GeometryResult 'ParcelId])))
-  PostGISV_ParcelsByValue ::
-    PostGISV
-      ( MapV
-          (Double, Double, Text)
-          ( First
-              ( Either
-                  Text
-                  [GeometryResult 'ParcelId]
-              )
-          )
-      )
+    PostGISV (IdentityV (First (Either Text (KeplerData (KeplerBarbie LaramieParcelT)))))
   -- TIGER Data
   PostGISV_CountyBoundaries ::
-    PostGISV (IdentityV (First (Either Text [GeometryResult 'FipsCode])))
+    PostGISV (IdentityV (First (Either Text (KeplerData (KeplerBarbie CountyBoundaryT)))))
   PostGISV_StateBoundaries ::
-    PostGISV (IdentityV (First (Either Text [GeometryResult 'StateCode])))
-  -- Wind Turbines
-  PostGISV_WindTurbines ::
-    PostGISV (IdentityV (First (Either Text [GeometryResult 'GeneratedId])))
+    PostGISV (IdentityV (First (Either Text (KeplerData (KeplerBarbie StateBoundaryT)))))
   -- SOI Data
-  PostGISV_SOIBasicDemographics ::
-    PostGISV
-      ( IdentityV
-          ( First
-              ( Either
-                  Text
-                  [ AttributeResult
-                      '[ 'Quantitative, 'Quantitative, 'Quantitative]
-                  ]
-              )
-          )
-      )
-  PostGISV_SOIIncomeMetrics ::
-    PostGISV
-      ( IdentityV
-          ( First
-              ( Either
-                  Text
-                  [ AttributeResult
-                      '[ 'Quantitative, 'Quantitative]
-                  ]
-              )
-          )
-      )
-  PostGISV_SOITaxPrepStats ::
-    PostGISV
-      ( IdentityV
-          ( First
-              ( Either
-                  Text
-                  [ AttributeResult
-                      '[ 'Quantitative, 'Quantitative, 'Quantitative]
-                  ]
-              )
-          )
-      )
-  PostGISV_SOIStateAggregates ::
-    PostGISV
-      ( IdentityV
-          ( First
-              ( Either
-                  Text
-                  [ AttributeResult
-                      '[ 'Categorical, 'Quantitative, 'Quantitative]
-                  ]
-              )
-          )
-      )
-  PostGISV_SOICountyData ::
-    PostGISV
-      ( IdentityV
-          ( First
-              ( Either
-                  Text
-                  [ AttributeResult
-                      '[ 'Categorical, 'Categorical, 'Quantitative]
-                  ]
-              )
-          )
-      )
-  PostGISV_SOIIncomeBrackets ::
-    PostGISV
-      ( IdentityV
-          ( First
-              ( Either
-                  Text
-                  [ AttributeResult
-                      '[ 'Categorical, 'Quantitative, 'Quantitative]
-                  ]
-              )
-          )
-      )
-  PostGISV_SOIAssistanceMetrics ::
-    PostGISV
-      ( IdentityV
-          ( First
-              ( Either
-                  Text
-                  [ AttributeResult
-                      '[ 'Quantitative, 'Quantitative, 'Quantitative]
-                  ]
-              )
-          )
-      )
-  PostGISV_SOIComplexMetrics ::
-    PostGISV
-      ( IdentityV
-          ( First
-              ( Either
-                  Text
-                  [ AttributeResult
-                      '[ 'Categorical, 'Quantitative, 'Quantitative, 'Quantitative]
-                  ]
-              )
-          )
-      )
+  PostGISV_SOI ::
+    PostGISV (IdentityV (First (Either Text (KeplerData (KeplerBarbie SoiT)))))
+  PostGISV_SOI_County ::
+    PostGISV (IdentityV (First (Either Text (KeplerData (KeplerBarbie (SoiT `Product` CountyBoundaryT))))))
+  PostGISV_SOI_State ::
+    PostGISV (IdentityV (First (Either Text (KeplerData (KeplerBarbie (SoiT `Product` StateBoundaryT))))))
+  PostGISV_WindTurbines ::
+    PostGISV (IdentityV (First (Either Text (KeplerData (KeplerBarbie WindTurbineT)))))
 
 concat
   <$> sequence

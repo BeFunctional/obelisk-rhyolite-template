@@ -18,3 +18,12 @@ with the intent to fill the screen. */
     }
 
 }
+
+/* Add full height and width to Kepler elements */
+@layer components {
+
+    .kepler-gl,
+    .kepler-gl>div {
+        @apply h-full w-full !important;
+    }
+}

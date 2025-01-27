@@ -2,14 +2,20 @@
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
 {-# LANGUAGE MonoLocalBinds #-}
-{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE TypeOperators #-}
 
 module Frontend.View.PostGIS where
 
 import Common.App
 import Common.App.PostGIS
-import Common.Model.Postgis.DSL
+import Common.Model.Beam.Parcels
+import Common.Model.Beam.SOI
+import Common.Model.Beam.Tiger
+import Common.Model.Beam.WindTurbine (WindTurbineT)
+import Common.Model.KeplerSpec (BeamToKepler (KeplerBarbie), KeplerData)
 import Data.Functor.Const (Const)
+import Data.Functor.Identity (Identity)
+import Data.Functor.Product (Product)
 import Data.Monoid (First (..))
 import Data.Text (Text)
 import Data.Vessel.Path ((~>))
@@ -29,8 +35,8 @@ type MonadDataWarehouseAppWidget t m =
     m
 
 watchAlbanyParcels ::
-  MonadDataWarehouseAppWidget t m =>
-  m (Dynamic t (Maybe (First (Either Text [GeometryResult 'ParcelId]))))
+  (MonadDataWarehouseAppWidget t m, Eq (Product SoiBarbie CountyBoundaryBarbie Identity), Eq (Product SoiBarbie StateBoundaryBarbie Identity)) =>
+  m (Dynamic t (Maybe (First (Either Text (KeplerData (KeplerBarbie AlbanyParcelT))))))
 watchAlbanyParcels =
   watch . constDyn $
     Vessel.publicP
@@ -40,8 +46,8 @@ watchAlbanyParcels =
       ~> Path.identityV
 
 watchLaramieParcels ::
-  MonadDataWarehouseAppWidget t m =>
-  m (Dynamic t (Maybe (First (Either Text [GeometryResult 'ParcelId]))))
+  (MonadDataWarehouseAppWidget t m, Eq (Product SoiBarbie CountyBoundaryBarbie Identity), Eq (Product SoiBarbie StateBoundaryBarbie Identity)) =>
+  m (Dynamic t (Maybe (First (Either Text (KeplerData (KeplerBarbie LaramieParcelT))))))
 watchLaramieParcels =
   watch . constDyn $
     Vessel.publicP
@@ -50,23 +56,9 @@ watchLaramieParcels =
       ~> Path.vessel PostGISV_LaramieParcels
       ~> Path.identityV
 
-watchParcelsByValue ::
-  MonadDataWarehouseAppWidget t m =>
-  Double -> -- minValue
-  Double -> -- maxValue
-  Text -> -- county
-  m (Dynamic t (Maybe (First (Either Text [GeometryResult 'ParcelId]))))
-watchParcelsByValue minVal maxVal county =
-  watch . constDyn $
-    Vessel.publicP
-      ~> Path.vessel DataWarehouseAppV_PostGIS
-      ~> Path.subVessel ()
-      ~> Path.vessel PostGISV_ParcelsByValue
-      ~> Path.mapV (minVal, maxVal, county)
-
 watchCountyBoundaries ::
-  MonadDataWarehouseAppWidget t m =>
-  m (Dynamic t (Maybe (First (Either Text [GeometryResult 'FipsCode]))))
+  (MonadDataWarehouseAppWidget t m, Eq (Product SoiBarbie CountyBoundaryBarbie Identity), Eq (Product SoiBarbie StateBoundaryBarbie Identity)) =>
+  m (Dynamic t (Maybe (First (Either Text (KeplerData (KeplerBarbie CountyBoundaryT))))))
 watchCountyBoundaries =
   watch . constDyn $
     Vessel.publicP
@@ -76,19 +68,8 @@ watchCountyBoundaries =
       ~> Path.identityV
 
 watchStateBoundaries ::
-  MonadDataWarehouseAppWidget t m =>
-  m
-    ( Dynamic
-        t
-        ( Maybe
-            ( First
-                ( Either
-                    Text
-                    [GeometryResult 'StateCode]
-                )
-            )
-        )
-    )
+  (MonadDataWarehouseAppWidget t m, Eq (Product SoiBarbie CountyBoundaryBarbie Identity), Eq (Product SoiBarbie StateBoundaryBarbie Identity)) =>
+  m (Dynamic t (Maybe (First (Either Text (KeplerData (KeplerBarbie StateBoundaryT))))))
 watchStateBoundaries =
   watch . constDyn $
     Vessel.publicP
@@ -97,216 +78,46 @@ watchStateBoundaries =
       ~> Path.vessel PostGISV_StateBoundaries
       ~> Path.identityV
 
+watchSOI ::
+  (MonadDataWarehouseAppWidget t m, Eq (Product SoiBarbie CountyBoundaryBarbie Identity), Eq (Product SoiBarbie StateBoundaryBarbie Identity)) =>
+  m (Dynamic t (Maybe (First (Either Text (KeplerData (KeplerBarbie SoiT))))))
+watchSOI =
+  watch . constDyn $
+    Vessel.publicP
+      ~> Path.vessel DataWarehouseAppV_PostGIS
+      ~> Path.subVessel ()
+      ~> Path.vessel PostGISV_SOI
+      ~> Path.identityV
+
+watchSOIOnCounty ::
+  (MonadDataWarehouseAppWidget t m, Eq (Product SoiBarbie CountyBoundaryBarbie Identity), Eq (Product SoiBarbie StateBoundaryBarbie Identity)) =>
+  m (Dynamic t (Maybe (First (Either Text (KeplerData (KeplerBarbie (SoiT `Product` CountyBoundaryT)))))))
+watchSOIOnCounty =
+  watch . constDyn $
+    Vessel.publicP
+      ~> Path.vessel DataWarehouseAppV_PostGIS
+      ~> Path.subVessel ()
+      ~> Path.vessel PostGISV_SOI_County
+      ~> Path.identityV
+
+watchSOIOnState ::
+  (MonadDataWarehouseAppWidget t m, Eq (Product SoiBarbie CountyBoundaryBarbie Identity), Eq (Product SoiBarbie StateBoundaryBarbie Identity)) =>
+  m (Dynamic t (Maybe (First (Either Text (KeplerData (KeplerBarbie (SoiT `Product` StateBoundaryT)))))))
+watchSOIOnState =
+  watch . constDyn $
+    Vessel.publicP
+      ~> Path.vessel DataWarehouseAppV_PostGIS
+      ~> Path.subVessel ()
+      ~> Path.vessel PostGISV_SOI_State
+      ~> Path.identityV
+
 watchWindTurbines ::
-  MonadDataWarehouseAppWidget t m =>
-  m
-    ( Dynamic
-        t
-        ( Maybe
-            ( First
-                ( Either
-                    Text
-                    [GeometryResult 'GeneratedId]
-                )
-            )
-        )
-    )
+  (MonadDataWarehouseAppWidget t m, Eq (Product SoiBarbie CountyBoundaryBarbie Identity), Eq (Product SoiBarbie StateBoundaryBarbie Identity)) =>
+  m (Dynamic t (Maybe (First (Either Text (KeplerData (KeplerBarbie WindTurbineT))))))
 watchWindTurbines =
   watch . constDyn $
     Vessel.publicP
       ~> Path.vessel DataWarehouseAppV_PostGIS
       ~> Path.subVessel ()
       ~> Path.vessel PostGISV_WindTurbines
-      ~> Path.identityV
-
-watchSOIBasicDemographics ::
-  MonadDataWarehouseAppWidget t m =>
-  m
-    ( Dynamic
-        t
-        ( Maybe
-            ( First
-                ( Either
-                    Text
-                    [ AttributeResult
-                        '[ 'Quantitative, 'Quantitative, 'Quantitative]
-                    ]
-                )
-            )
-        )
-    )
-watchSOIBasicDemographics =
-  watch . constDyn $
-    Vessel.publicP
-      ~> Path.vessel DataWarehouseAppV_PostGIS
-      ~> Path.subVessel ()
-      ~> Path.vessel PostGISV_SOIBasicDemographics
-      ~> Path.identityV
-
-watchSOIIncomeMetrics ::
-  MonadDataWarehouseAppWidget t m =>
-  m
-    ( Dynamic
-        t
-        ( Maybe
-            ( First
-                ( Either
-                    Text
-                    [ AttributeResult
-                        '[ 'Quantitative, 'Quantitative]
-                    ]
-                )
-            )
-        )
-    )
-watchSOIIncomeMetrics =
-  watch . constDyn $
-    Vessel.publicP
-      ~> Path.vessel DataWarehouseAppV_PostGIS
-      ~> Path.subVessel ()
-      ~> Path.vessel PostGISV_SOIIncomeMetrics
-      ~> Path.identityV
-
-watchSOITaxPrepStats ::
-  MonadDataWarehouseAppWidget t m =>
-  m
-    ( Dynamic
-        t
-        ( Maybe
-            ( First
-                ( Either
-                    Text
-                    [ AttributeResult
-                        '[ 'Quantitative, 'Quantitative, 'Quantitative]
-                    ]
-                )
-            )
-        )
-    )
-watchSOITaxPrepStats =
-  watch . constDyn $
-    Vessel.publicP
-      ~> Path.vessel DataWarehouseAppV_PostGIS
-      ~> Path.subVessel ()
-      ~> Path.vessel PostGISV_SOITaxPrepStats
-      ~> Path.identityV
-
-watchSOIStateAggregates ::
-  MonadDataWarehouseAppWidget t m =>
-  m
-    ( Dynamic
-        t
-        ( Maybe
-            ( First
-                ( Either
-                    Text
-                    [ AttributeResult
-                        '[ 'Categorical, 'Quantitative, 'Quantitative]
-                    ]
-                )
-            )
-        )
-    )
-watchSOIStateAggregates =
-  watch . constDyn $
-    Vessel.publicP
-      ~> Path.vessel DataWarehouseAppV_PostGIS
-      ~> Path.subVessel ()
-      ~> Path.vessel PostGISV_SOIStateAggregates
-      ~> Path.identityV
-
-watchSOICountyData ::
-  MonadDataWarehouseAppWidget t m =>
-  m
-    ( Dynamic
-        t
-        ( Maybe
-            ( First
-                ( Either
-                    Text
-                    [ AttributeResult
-                        '[ 'Categorical, 'Categorical, 'Quantitative]
-                    ]
-                )
-            )
-        )
-    )
-watchSOICountyData =
-  watch . constDyn $
-    Vessel.publicP
-      ~> Path.vessel DataWarehouseAppV_PostGIS
-      ~> Path.subVessel ()
-      ~> Path.vessel PostGISV_SOICountyData
-      ~> Path.identityV
-
-watchSOIIncomeBrackets ::
-  MonadDataWarehouseAppWidget t m =>
-  m
-    ( Dynamic
-        t
-        ( Maybe
-            ( First
-                ( Either
-                    Text
-                    [ AttributeResult
-                        '[ 'Categorical, 'Quantitative, 'Quantitative]
-                    ]
-                )
-            )
-        )
-    )
-watchSOIIncomeBrackets =
-  watch . constDyn $
-    Vessel.publicP
-      ~> Path.vessel DataWarehouseAppV_PostGIS
-      ~> Path.subVessel ()
-      ~> Path.vessel PostGISV_SOIIncomeBrackets
-      ~> Path.identityV
-
-watchSOIAssistanceMetrics ::
-  MonadDataWarehouseAppWidget t m =>
-  m
-    ( Dynamic
-        t
-        ( Maybe
-            ( First
-                ( Either
-                    Text
-                    [ AttributeResult
-                        '[ 'Quantitative, 'Quantitative, 'Quantitative]
-                    ]
-                )
-            )
-        )
-    )
-watchSOIAssistanceMetrics =
-  watch . constDyn $
-    Vessel.publicP
-      ~> Path.vessel DataWarehouseAppV_PostGIS
-      ~> Path.subVessel ()
-      ~> Path.vessel PostGISV_SOIAssistanceMetrics
-      ~> Path.identityV
-
-watchSOIComplexMetrics ::
-  MonadDataWarehouseAppWidget t m =>
-  m
-    ( Dynamic
-        t
-        ( Maybe
-            ( First
-                ( Either
-                    Text
-                    [ AttributeResult
-                        '[ 'Categorical, 'Quantitative, 'Quantitative, 'Quantitative]
-                    ]
-                )
-            )
-        )
-    )
-watchSOIComplexMetrics =
-  watch . constDyn $
-    Vessel.publicP
-      ~> Path.vessel DataWarehouseAppV_PostGIS
-      ~> Path.subVessel ()
-      ~> Path.vessel PostGISV_SOIComplexMetrics
       ~> Path.identityV

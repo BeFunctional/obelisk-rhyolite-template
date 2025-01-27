@@ -10,6 +10,14 @@ module.exports = {
   // theme: {
   // },
   plugins: ["@tailwindcss/forms"],
+  layers: {
+    components: {
+      '.kepler-gl': {
+        height: '100% !important',
+        width: '100% !important'
+      }
+    }
+  },
   variants: {
     extend: {
       visibility: ["group-hover"],
