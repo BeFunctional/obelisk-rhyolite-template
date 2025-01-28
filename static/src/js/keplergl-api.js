@@ -15,6 +15,8 @@ export class KeplerGlAPI {
     this.enableLogging = enableLogging;
     this.log('Initializing KeplerGlAPI');
     this.reducer = null;
+    this.filterCallbacks = new Map();
+    this.hasWrappedReducer = false;
 
     try {
       const container = document.getElementById(containerId);
@@ -112,6 +114,35 @@ export class KeplerGlAPI {
     }
   }
 
+  initFilterReducer() {
+    if (!this.hasWrappedReducer) {
+      const originalReducer = this.store.getState().keplerGl;
+      const wrappedReducer = (state = originalReducer, action) => {
+        const newState = this.reducer(state, action);
+
+        if (action.type.includes('FILTER')) {
+          this.filterCallbacks.forEach((callback, datasetId) => {
+            const dataset = newState.map.visState.datasets[datasetId];
+            if (dataset) {
+              this.log('Dataset filter change detected', { datasetId });
+              const filteredDataIdxs = dataset.filteredIndexForDomain;
+              callback(filteredDataIdxs);
+            }
+          });
+        }
+
+        return newState;
+      };
+
+      this.store.replaceReducer(combineReducers({
+        keplerGl: wrappedReducer
+      }));
+
+      this.hasWrappedReducer = true;
+      this.log('Filter reducer initialized');
+    }
+  }
+
   loadDataset(dataset, onFilterFn = null) {
     try {
       if (!dataset) {
@@ -150,9 +181,6 @@ export class KeplerGlAPI {
       this.log('Dataset loaded successfully', { datasetId: dataset.id });
 
       if (onFilterFn !== null) {
-        this.log('Subscribing to dataset filter updates', { datasetId: dataset.id });
-        const originalReducer = this.store.getState().keplerGl;
-
         const debounce = (callback, wait) => {
           let timeoutId = null;
           return (...args) => {
@@ -163,32 +191,9 @@ export class KeplerGlAPI {
           };
         };
 
-        const debouncedFilter = debounce(onFilterFn, 50);
-
-        // Create wrapped reducer that calls onFilterFn when filters change
-        const wrappedReducer = (state = originalReducer, action) => {
-          const newState = this.reducer(state, action);
-
-          // Check if action affects filters
-          if (action.type.includes('FILTER') && dataset.id) {
-            this.log('Dataset filter change detected', { datasetId: dataset.id });
-
-            const curDataset = newState.map.visState.datasets[dataset.id];
-            const filteredDataIdxs = curDataset.filteredIndexForDomain;
-
-            // Pass the indices array directly
-            debouncedFilter(filteredDataIdxs);
-          }
-
-          return newState;
-        };
-
-        // Replace reducer to intercept filter changes
-        this.store.replaceReducer(combineReducers({
-          keplerGl: wrappedReducer
-        }));
-
-        this.log('Dataset filter updates subscribed', { datasetId: dataset.id });
+        this.filterCallbacks.set(dataset.id, debounce(onFilterFn, 50));
+        this.initFilterReducer();
+        this.log('Dataset filter callback registered', { datasetId: dataset.id });
       }
 
     } catch (error) {
@@ -229,6 +234,7 @@ export class KeplerGlAPI {
         payload: newState
       });
 
+      this.filterCallbacks.delete(datasetId);
       this.log('Dataset removed successfully');
     } catch (error) {
       this.logError('removeDataset', error);
@@ -259,6 +265,7 @@ export class KeplerGlAPI {
         payload: newState
       });
 
+      this.filterCallbacks.clear();
       this.log('All datasets cleared successfully');
     } catch (error) {
       this.logError('clearAllDatasets', error);
