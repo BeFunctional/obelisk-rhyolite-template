@@ -21,6 +21,7 @@ import Common.Model.Beam.SOI (SoiBarbie, SoiT)
 import Common.Model.Beam.Tiger (CountyBoundaryBarbie, CountyBoundaryT (CountyBoundary), StateBoundaryBarbie, StateBoundaryT)
 import Common.Model.Beam.WindTurbine (WindTurbineT)
 import Common.Model.KeplerSpec (BeamToKepler (KeplerBarbie), KeplerData (keplerCsv), SomeKeplerData (SomeKeplerData))
+import Common.Model.Postgis.DSL
 import Common.Statistics.Monoid (HasSummaryStatistics, SummaryStatistics)
 import Data.Aeson (Value)
 import qualified Data.Aeson as Aeson
@@ -33,7 +34,7 @@ import Data.Text (Text)
 import qualified Data.Text.Encoding as T
 import Data.Vinyl
 import Database.Beam
-import Frontend.Map.Kepler.SummaryStats (StatsTableData, subsetToSummary)
+import Frontend.Map.Kepler.SummaryStats (And, StatsTableData, subsetToSummary)
 import Frontend.View.PostGIS
 import GHC.Int (Int32)
 import Reflex.Class (Reflex (Dynamic))
@@ -48,8 +49,8 @@ data KnownDataSets
 
 textKnownDataSet :: KnownDataSets -> Text
 textKnownDataSet = \case
-  AlbanyParcels -> "Albany Parcels"
-  LaramieParcels -> "Laramie Parcels"
+  AlbanyParcels -> "South-Eastern Wyoming Parcels (Albany)"
+  LaramieParcels -> "South-Eastern Wyoming Parcels (Laramie)"
   WindTurbines -> "Wind Turbines"
   SOIOnCounty -> "SOI on County"
   SOIOnState -> "SOI on State"
@@ -64,6 +65,8 @@ makeJsonAndSummary ::
     Monad m,
     KeplerBarbie table ~ barbie,
     TraversableB barbie,
+    AllB Localize (KeplerBarbie table),
+    AllB (And Localize Show) (KeplerBarbie table),
     Monoid (barbie SummaryStatistics),
     AllB HasSummaryStatistics barbie,
     AllB Ord barbie,

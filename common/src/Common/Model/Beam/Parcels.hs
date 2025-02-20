@@ -15,18 +15,16 @@ module Common.Model.Beam.Parcels where
 import Barbies
 import Common.Model.Beam.Expressions.GeoJSON
 import Common.Model.KeplerSpec
-import Common.Model.Postgis.DSL (GeoJSON)
+import Common.Model.Postgis.DSL (GeoJSON, USDFloat)
 import Data.Aeson (FromJSON, ToJSON)
 import Data.Coerce (coerce)
 import Data.Data (Data)
-import Data.Functor.Barbie
 import Data.Functor.Const (Const (Const))
 import Data.Functor.Identity (Identity (..))
 import Data.Int (Int32, Int64)
 import Data.Scientific (Scientific)
 import Data.Text (Text)
 import Database.Beam
-import GHC.Generics (Generic)
 
 data AlbanyParcelT f = AlbanyParcel
   { albanyParcelGid :: Columnar f Int64,
@@ -45,15 +43,16 @@ data AlbanyParcelT f = AlbanyParcel
     albanyParcelDescript :: Columnar f (Maybe Text),
     albanyParcelGrossAcres :: Columnar f (Maybe Scientific),
     albanyParcelGrossSf :: Columnar f (Maybe Scientific),
-    albanyParcelTotalVal :: Columnar f (Maybe Scientific),
-    albanyParcelLandVal :: Columnar f (Maybe Scientific),
+    albanyParcelTotalVal :: Columnar f (Maybe (USDFloat Scientific)),
+    albanyParcelLandVal :: Columnar f (Maybe (USDFloat Scientific)),
     albanyParcelAcctType :: Columnar f (Maybe Text),
     albanyParcelTaxYear :: Columnar f (Maybe Text),
     albanyParcelTaxDist :: Columnar f (Maybe Text),
     albanyParcelBldgs :: Columnar f (Maybe Int32),
     albanyParcelLea :: Columnar f (Maybe Text),
     albanyParcelNbhd :: Columnar f (Maybe Text),
-    albanyParcelGeom :: Columnar f (Maybe (GeoJSON Text))
+    albanyParcelGeom :: Columnar f (Maybe (GeoJSON Text)),
+    albanyParcelNTurbines :: Columnar f Int32
   }
   deriving (Generic, Beamable)
 
@@ -83,14 +82,15 @@ data AlbanyParcelBarbie f = AlbanyParcelBarbie
     apbDescript :: f (Maybe Text),
     apbGrossAcres :: f (Maybe Scientific),
     apbGrossSf :: f (Maybe Scientific),
-    apbTotalVal :: f (Maybe Scientific),
-    apbLandVal :: f (Maybe Scientific),
+    apbTotalVal :: f (Maybe (USDFloat Scientific)),
+    apbLandVal :: f (Maybe (USDFloat Scientific)),
     apbAcctType :: f (Maybe Text),
     apbTaxYear :: f (Maybe Text),
     apbTaxDist :: f (Maybe Text),
     apbBldgs :: f (Maybe Int32),
     apbLea :: f (Maybe Text),
-    apbNbhd :: f (Maybe Text)
+    apbNbhd :: f (Maybe Text),
+    apbNTurbines :: f Int32
   }
   deriving (Generic, FunctorB, TraversableB, ApplicativeB)
 
@@ -122,13 +122,14 @@ data LaramieParcelT f = LaramieParcel
     laramieParcelLegal :: Columnar f (Maybe Text),
     laramieParcelTaxYear :: Columnar f (Maybe Text),
     laramieParcelShareDate :: Columnar f (Maybe Text),
-    laramieParcelTotalLandV :: Columnar f (Maybe Scientific),
-    laramieParcelTotalImpsV :: Columnar f (Maybe Scientific),
-    laramieParcelTotalCostV :: Columnar f (Maybe Scientific),
-    laramieParcelAssessedVa :: Columnar f (Maybe Scientific),
+    laramieParcelTotalLandV :: Columnar f (Maybe (USDFloat Scientific)),
+    laramieParcelTotalImpsV :: Columnar f (Maybe (USDFloat Scientific)),
+    laramieParcelTotalCostV :: Columnar f (Maybe (USDFloat Scientific)),
+    laramieParcelAssessedVa :: Columnar f (Maybe (USDFloat Scientific)),
     laramieParcelStAreaSh :: Columnar f (Maybe Scientific),
     laramieParcelStLength :: Columnar f (Maybe Scientific),
-    laramieParcelGeom :: Columnar f (Maybe (GeoJSON Text))
+    laramieParcelGeom :: Columnar f (Maybe (GeoJSON Text)),
+    laramieParcelNTurbines :: Columnar f Int32
   }
   deriving (Generic, Beamable)
 
@@ -169,12 +170,13 @@ data LaramieParcelBarbie f = LaramieParcelBarbie
     lpbLegal :: f (Maybe Text),
     lpbTaxYear :: f (Maybe Text),
     lpbShareDate :: f (Maybe Text),
-    lpbTotalLandV :: f (Maybe Scientific),
-    lpbTotalImpsV :: f (Maybe Scientific),
-    lpbTotalCostV :: f (Maybe Scientific),
-    lpbAssessedVa :: f (Maybe Scientific),
+    lpbTotalLandV :: f (Maybe (USDFloat Scientific)),
+    lpbTotalImpsV :: f (Maybe (USDFloat Scientific)),
+    lpbTotalCostV :: f (Maybe (USDFloat Scientific)),
+    lpbAssessedVa :: f (Maybe (USDFloat Scientific)),
     lpbStAreaSh :: f (Maybe Scientific),
-    lpbStLength :: f (Maybe Scientific)
+    lpbStLength :: f (Maybe Scientific),
+    lpbNTurbines :: f Int32
   }
   deriving (Generic, FunctorB, TraversableB, ApplicativeB)
 
@@ -222,7 +224,8 @@ instance BeamToKepler AlbanyParcelT where
       "bldgs",
       "lea",
       "nbhd",
-      "geom"
+      "geom",
+      "n_turbines"
     ]
   keplerColumnDescriptions _ =
     AlbanyParcelBarbie
@@ -249,7 +252,8 @@ instance BeamToKepler AlbanyParcelT where
         apbTaxDist = Const "Tax district",
         apbBldgs = Const "Number of buildings",
         apbLea = Const "Local education agency",
-        apbNbhd = Const "Neighborhood code"
+        apbNbhd = Const "Neighborhood code",
+        apbNTurbines = Const "Number of wind turbines on parcel"
       }
   toKeplerRecord
     ( AlbanyParcel
@@ -278,6 +282,7 @@ instance BeamToKepler AlbanyParcelT where
         lea
         nbhd
         _
+        nTurbines
       ) =
       AlbanyParcelBarbie
         (coerce gid)
@@ -304,6 +309,7 @@ instance BeamToKepler AlbanyParcelT where
         (coerce bldgs)
         (coerce lea)
         (coerce nbhd)
+        (coerce nTurbines)
 
 -- Laramie Parcels
 instance BeamToKepler LaramieParcelT where
@@ -342,7 +348,8 @@ instance BeamToKepler LaramieParcelT where
       "assessedva",
       "st_area_sh",
       "st_length_",
-      "geom"
+      "geom",
+      "n_turbines"
     ]
   keplerColumnDescriptions _ =
     LaramieParcelBarbie
@@ -378,7 +385,8 @@ instance BeamToKepler LaramieParcelT where
         lpbTotalCostV = Const "Total cost value",
         lpbAssessedVa = Const "Assessed value",
         lpbStAreaSh = Const "Shape area",
-        lpbStLength = Const "Shape length"
+        lpbStLength = Const "Shape length",
+        lpbNTurbines = Const "Number of wind turbines on parcel"
       }
   toKeplerRecord
     ( LaramieParcel
@@ -416,6 +424,7 @@ instance BeamToKepler LaramieParcelT where
         area
         len
         _
+        nTurbines
       ) =
       LaramieParcelBarbie
         (coerce gid)
@@ -451,6 +460,7 @@ instance BeamToKepler LaramieParcelT where
         (coerce ava)
         (coerce area)
         (coerce len)
+        (coerce nTurbines)
 
 deriving instance AllBF Show f AlbanyParcelBarbie => Show (AlbanyParcelBarbie f)
 

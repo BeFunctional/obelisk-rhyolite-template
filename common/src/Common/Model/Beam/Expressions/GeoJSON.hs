@@ -110,8 +110,28 @@ toWGS84FromSPWYE_ ::
   QGenExpr context be s a
 toWGS84FromSPWYE_ =
   transformSrid
-    (UnsafeMkValidSrid 32155)
-    (UnsafeMkValidSrid 4326)
+    (UnsafeMkValidSrid 4901) -- From NAD 1983 State Plane Wyoming East
+    (UnsafeMkValidSrid 4326) -- To WGS84
+
+toWGS84FromSPWYEMeters_ ::
+  ( IsCustomSqlSyntax
+      ( Sql92SelectTableExpressionSyntax
+          ( Sql92SelectSelectTableSyntax
+              ( Sql92SelectSyntax
+                  (BeamSqlBackendSyntax be)
+              )
+          )
+      )
+  ) =>
+  QGenExpr context be s a ->
+  QGenExpr context be s a
+toWGS84FromSPWYEMeters_ =
+  customExpr_
+    ( \val ->
+        "ST_Transform(ST_SetSRID(ST_Scale("
+          <> val
+          <> ", 0.3048, 0.3048), 32155), 4326)"
+    )
 
 isValidSRID :: Word -> Bool
 isValidSRID srid = srid `Set.member` validSRIDs

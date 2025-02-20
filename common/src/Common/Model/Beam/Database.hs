@@ -98,7 +98,7 @@ albany2024Db =
     ( defaultDbSettings
         `withDbModification` dbModification
           { dbAlbanyParcels =
-              setEntityName "parcels"
+              setEntityName "parcels_with_turbines"
                 <> modifyTableFields
                   tableModification
                     { albanyParcelGid = "gid",
@@ -125,7 +125,8 @@ albany2024Db =
                       albanyParcelBldgs = "bldgs",
                       albanyParcelLea = "lea",
                       albanyParcelNbhd = "nbhd",
-                      albanyParcelGeom = "geom"
+                      albanyParcelGeom = "geom",
+                      albanyParcelNTurbines = "n_turbines"
                     }
           }
     )
@@ -137,7 +138,7 @@ laramie2022Db =
     ( defaultDbSettings
         `withDbModification` dbModification
           { dbLaramieParcels =
-              setEntityName "parcels"
+              setEntityName "parcels_with_turbines"
                 <> modifyTableFields
                   tableModification
                     { laramieParcelGid = "gid",
@@ -173,7 +174,8 @@ laramie2022Db =
                       laramieParcelAssessedVa = "assessedva",
                       laramieParcelStAreaSh = "st_area_sh",
                       laramieParcelStLength = "st_length_",
-                      laramieParcelGeom = "geom"
+                      laramieParcelGeom = "geom",
+                      laramieParcelNTurbines = "n_turbines"
                     }
           }
     )

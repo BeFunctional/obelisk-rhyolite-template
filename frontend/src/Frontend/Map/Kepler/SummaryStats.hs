@@ -1,28 +1,36 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE ConstraintKinds #-}
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE FlexibleContexts #-}
+{-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE GADTs #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE TupleSections #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE UndecidableSuperClasses #-}
 
 module Frontend.Map.Kepler.SummaryStats
   ( StatsTableData (..),
     subsetToSummary,
     renderStatsSection,
+    And,
   )
 where
 
 import Common.Model.KeplerSpec (BeamToKepler (..), KeplerBarbie, KeplerData (..))
+import Common.Model.Postgis.DSL
 import Common.Statistics.Monoid
 import Control.Monad (forM_)
 import Control.Monad.Fix (MonadFix)
 import Data.Data (Proxy (..))
 import Data.Functor.Barbie
+import Numeric (showFFloat)
 import Data.Functor.Const (Const (..))
 import Data.Functor.Identity
 import Data.Functor.Product (Product (..))
@@ -99,6 +107,8 @@ subsetToSummary ::
     TraversableB barbie,
     AllB Show barbie,
     Monoid (barbie SummaryStatistics),
+    AllB Localize (KeplerBarbie tbl),
+    AllB (And Localize Show) (KeplerBarbie tbl),
     AllB HasSummaryStatistics barbie,
     AllB Ord barbie,
     ConstraintsB barbie,
@@ -138,12 +148,18 @@ computeStats ::
   b SummaryStatistics
 computeStats = bmapC @HasSummaryStatistics (singletonStat . runIdentity)
 
+class (c1 x, c2 x) => And c1 c2 x
+
+instance (c1 x, c2 x) => And c1 c2 x
+
 statToColumns ::
   forall tbl.
   ( BeamToKepler tbl,
     TraversableB (KeplerBarbie tbl),
     ConstraintsB (KeplerBarbie tbl),
     AllB Show (KeplerBarbie tbl),
+    AllB Localize (KeplerBarbie tbl),
+    AllB (And Localize Show) (KeplerBarbie tbl),
     Monoid (KeplerBarbie tbl SummaryStatistics)
   ) =>
   [KeplerBarbie tbl SummaryStatistics] ->
@@ -151,7 +167,7 @@ statToColumns ::
 statToColumns stats =
   let fieldNames =
         -- trace ("Field names: " ++ show fieldNames) $
-        barbieColumnNames (Proxy @tbl)
+        barbieColumnNames  (Proxy @tbl)
       descriptions =
         -- trace ("Descriptions: " ++ show descriptions) $
         bfoldMapC @Show
@@ -163,44 +179,48 @@ statToColumns stats =
 
       formatNumber :: (Show a, RealFloat a) => a -> Text
       formatNumber n
-        | isNaN n = "NaN"
-        | isInfinite n = if n > 0 then "Inf" else "-Inf"
-        | abs n >= 1e6 = formatLargeNumber n
-        | otherwise = addCommas $ T.pack $ show n
-        where
-          formatLargeNumber x =
-            let rounded = (fromInteger (round (x * 100)) / 100 :: Double)
-             in addCommas $ T.pack $ show rounded
+            | isNaN n = "NaN"
+            | isInfinite n = if n > 0 then "Inf" else "-Inf"
+            | abs n >= 1e9 = formatWithSuffix n 1e9 "B"  -- Billions
+            | abs n >= 1e6 = formatWithSuffix n 1e6 "M"  -- Millions
+            | abs n >= 1e3 = addCommas $ T.pack $ showFFloat (Just 2) n ""
+            | otherwise = T.pack $ showFFloat (Just 2) n ""
+          where
+            formatWithSuffix x divisor suffix =
+              let scaled = x / divisor
+                  rounded = showFFloat (Just 2) scaled ""
+               in T.pack rounded <> suffix
 
-          addCommas :: Text -> Text
-          addCommas t =
-            case T.break (== '.') t of
-              (whole, decimal) ->
-                let reversed = T.reverse whole
-                    grouped = T.intercalate "," $ T.chunksOf 3 reversed
-                 in T.reverse grouped <> decimal
+            addCommas :: Text -> Text
+            addCommas t =
+              case T.break (== '.') t of
+                (whole, decimal) ->
+                  let reversed = T.reverse whole
+                      grouped = T.chunksOf 3 reversed
+                      withCommas = T.intercalate "," grouped
+                   in T.reverse withCommas <> decimal
 
       -- Get available statistics for a single field
-      getFieldStats :: Show a => SummaryStatistics a -> [(Text, Text)]
+      getFieldStats :: (Show a, Localize a) => SummaryStatistics a -> [(Text, Text)]
       getFieldStats s =
         catMaybes
           [ fmap
-              (("Count",) . T.pack . show . MonoidStatistics.calcCountN)
+              (("Count",) . localize)
               (unHKMonoidStat $ _statCount s),
             fmap
-              (("Unique Count",) . T.pack . show . Set.size . getUniqueCountOf)
+              (("Unique Count",) . localize . Set.size . getUniqueCountOf)
               (unHKMonoidStat $ _statUniqueCountOf s),
             fmap
-              (("Mean",) . formatNumber)
+              (("Mean",) . localize)
               (MonoidStatistics.calcMean =<< unHKMonoidStat (_statMean s)),
             fmap
-              (("Min",) . T.pack . show)
+              (("Min",) . localize)
               (MonoidStatistics.calcMin =<< unHKMonoidStat (_statMin s)),
             fmap
-              (("Max",) . T.pack . show)
+              (("Max",) . localize)
               (MonoidStatistics.calcMax =<< unHKMonoidStat (_statMax s)),
             fmap
-              (("Sum",) . T.pack . show . Common.Statistics.Monoid.getSum)
+              (("Sum",) . localize . Common.Statistics.Monoid.getSum)
               (unHKMonoidStat $ _statSum s)
           ]
 
@@ -210,11 +230,11 @@ statToColumns stats =
           ( ["Statistic", "Value"],
             map (\(stat, val) -> [stat, val]) stats
           )
-      isStatsTableEmpty = null . unStatsTableData
+      isStatsTableEmpty = null . concat . snd. unStatsTableData
 
       -- Convert the barbie record to a list of (field name, description, statistics) pairs
       statsWithNames =
-        bfoldMapC @Show
+        bfoldMapC @(Localize `And` Show) -- Update constraint
           (\stats -> [getFieldStats stats])
           combinedStats
    in filter (\(a, b, c) -> not . isStatsTableEmpty $ c) $
@@ -222,6 +242,6 @@ statToColumns stats =
           ( \name desc stats ->
               (name, desc, makeTableData stats)
           )
-          fieldNames
           descriptions
+          fieldNames
           statsWithNames

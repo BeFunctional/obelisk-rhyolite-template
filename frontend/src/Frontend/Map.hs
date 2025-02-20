@@ -22,6 +22,7 @@ import Control.Monad.IO.Class (MonadIO)
 import Data.Bifunctor (Bifunctor (..))
 import Data.Foldable (traverse_)
 import Data.Function ((&))
+import Data.Functor ((<&>))
 import Data.Functor.Compose (Compose (..))
 import Data.Int (Int32)
 import qualified Data.Map.Strict as Map
@@ -36,15 +37,12 @@ import Frontend.View.PostGIS
   )
 import Reflex
   ( Dynamic,
+    MonadHold (holdDyn),
     Reflex (Event, never, updated),
     accumDyn,
     leftmost,
     switchDyn,
     switchHold,
-    traceDyn,
-    traceDynWith,
-    traceEvent,
-    traceEventWith,
     zipDyn,
   )
 import Reflex.Dom.Core
@@ -104,16 +102,21 @@ keplerMapWidget = do
       dataset1 = DatasetId "kepler-dataset-1"
       dataset2 = DatasetId "kepler-dataset-2"
 
-  let datasetOpts =
+  let datasetOpts1 =
         constDyn $
           Map.fromList
             [ (Just dataset, textKnownDataSet dataset)
-              | dataset <- [minBound .. maxBound]
+              | dataset <- [WindTurbines, SOIOnCounty, SOIOnState]
+            ]
+      datasetOpts2 = constDyn $
+          Map.fromList
+            [ (Just dataset, textKnownDataSet dataset)
+              | dataset <- [AlbanyParcels, LaramieParcels]
             ]
 
   (sel1, sel2) <- elClass "div" "flex flex-row gap-4" $ do
-    sel1 <- makeDatasetSelector "Dataset 1" datasetOpts
-    sel2 <- makeDatasetSelector "Dataset 2" datasetOpts
+    sel1 <- makeDatasetSelector "Property Types" datasetOpts1
+    sel2 <- makeDatasetSelector "Jurisdictions" datasetOpts2
     pure (sel1, sel2)
 
   config1D <- dyn . ffor (fromDynValidation @t @Text @KnownDataSets $ value sel1) $ \case
@@ -158,33 +161,33 @@ keplerMapWidget = do
         <$> watchSomeKeplerDataSet dataset
     _ -> pure $ constDyn Nothing
 
-  config1E <- switchHold never $ fmap updated (traceEventWith (const "config1D created") config1D)
-  config2E <- switchHold never $ fmap updated (traceEventWith (const "config2D created") config2D)
+  config1E <- switchHold never $ fmap updated config1D
+  config2E <- switchHold never $ fmap updated  config2D
 
-  let config1 = fmapMaybe (either (const Nothing) Just <=< (getFirst =<<)) (traceEventWith (const "config1E firing") config1E)
-  let config2 = fmapMaybe (either (const Nothing) Just <=< (getFirst =<<)) (traceEventWith (const "config2E firing") config2E)
+  let config1 = fmapMaybe (either (const Nothing) Just <=< (getFirst =<<)) config1E
+  let config2 = fmapMaybe (either (const Nothing) Just <=< (getFirst =<<)) config2E
 
   elAttr
     "div"
     (Map.fromList [("id", "kepler-map"), ("class", "h-full w-full")])
     blank
 
-  pb <- delay 0 =<< (traceEventWith (const "PostBuild") <$> getPostBuild)
-  indiciesD2 <- fmap (traceDynWith (const "indiciesD2 full") . join)
+  pb <- delay 0 =<<  getPostBuild
+  indiciesD2 <- fmap  join
     . widgetHold (pure $ constDyn (never, never))
     $ ffor pb $ \_ -> do
       mInstanceE <- initKeplerGl containerId
       widgetHold (pure (never, never)) $
-        ffor (traceEventWith (const "Kepler instance created") mInstanceE) $ \case
+        ffor  mInstanceE $ \case
           Nothing -> do
             pure (never, never)
           Just instance_ -> do
-            indices1E <- traceEventWith (const "dataset 1 indices firing") <$> appendKeplerDataset instance_ (fst <$> config1)
+            indices1E <-  appendKeplerDataset instance_ (fst <$> config1)
             config1D <- accumDyn (\_ c -> c) Nothing (Just . snd <$> config1)
             indices1D <- accumDyn (\_ i -> i) Nothing indices1E
 
             -- Accumulate state for dataset 2
-            indices2E <- traceEventWith (const "dataset 2 indices firing") <$> appendKeplerDataset instance_ (fst <$> config2)
+            indices2E <-  appendKeplerDataset instance_ (fst <$> config2)
             config2D <- accumDyn (\_ c -> c) Nothing (Just . snd <$> config2)
             indices2D <- accumDyn (\_ i -> i) Nothing indices2E
 
@@ -197,7 +200,7 @@ keplerMapWidget = do
   let pair1E = fmapMaybe (fmap DatasetPair . sequence) $ switchDyn $ fst <$> indiciesD2
       pair2E = fmapMaybe (fmap DatasetPair . sequence) $ switchDyn $ snd <$> indiciesD2
 
-  pure (traceEventWith (const "Final pair1E") $ pair1E, traceEventWith (const "Final pair2E") pair2E)
+  pure ( pair1E, pair2E)
 
 makeDatasetSelector ::
   ( DomBuilder t m,
@@ -252,12 +255,10 @@ keplerMapPage ::
   m ()
 keplerMapPage =
   elClass "div" "flex flex-col h-full" $ do
-    datasetWidget
-
     elClass "div" "flex flex-row flex-1 min-h-0" $ do
       (pair1E, pair2E) <- elClass "div" "w-[60%] h-full" keplerMapWidget
-      let render1 = renderDatasetStats "Dataset 1" (traceEventWith (const "parit1") pair1E)
-          render2 = renderDatasetStats "Dataset 2" (traceEventWith (const "arit2") pair2E)
+      -- let render1 = renderDatasetStats "Dataset 1" (traceEventWith (const "parit1") pair1E)
+      --     render2 = renderDatasetStats "Dataset 2" (traceEventWith (const "arit2") pair2E)
 
       elClass "div" "w-[40%] h-full overflow-y-auto border-l border-gray-200 dark:border-gray-700" $ do
         elClass "div" "p-4 border-b border-gray-200 dark:border-gray-700" $ do
@@ -265,16 +266,20 @@ keplerMapPage =
             elClass "div" "font-medium mb-2" $ text "Statistics Visibility"
             makeStatsToggles
 
-          widgetHold_ render1 $
-            ffor (updated dataset1Visible) $ \visible ->
-              if visible
-                then render1
-                else text "Dataset 1 is not visible"
-          widgetHold_ render2 $
-            ffor (updated dataset2Visible) $ \visible ->
-              if visible
-                then render2
-                else text "Dataset 2 is not visible"
+          pair1D <- holdDyn Nothing (Just <$> pair1E)
+          pair2D <- holdDyn Nothing (Just <$> pair2E)
+
+          -- Combine visibility with dataset values
+          dyn_ $
+            ffor (zipDyn dataset1Visible pair1D) $ \case
+              (True, Just pair) ->
+                renderDatasetStats "Property Type" pair
+              _ -> blank
+
+          dyn_ $
+            ffor (zipDyn dataset2Visible pair2D) $ \case
+              (True, Just pair) -> renderDatasetStats "Jurisdiction" pair
+              _ -> blank
 
 renderDatasetStats ::
   ( MonadDataWarehouseAppWidget t m,
@@ -282,28 +287,12 @@ renderDatasetStats ::
     PostBuild t m
   ) =>
   Text ->
-  Event t DatasetPair ->
+  DatasetPair ->
   m ()
-renderDatasetStats label pairE =
-  widgetHold_ blank $
-    ffor pairE $ \(DatasetPair (mIndices, renderFn)) ->
-      elClass "div" "mt-4" $ do
-        elClass "h3" "font-medium mb-2" $ text label
-        renderStatsSection $ renderFn (fromMaybe mempty mIndices)
-
-datasetWidget ::
-  ( DomBuilder t m,
-    PostBuild t m,
-    MonadFix m
-  ) =>
-  m ()
-datasetWidget =
-  elClass "div" "flex-none p-4 bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-gray-700" $ do
-    elClass "div" "max-w-sm mx-auto" $ do
-      elClass "h2" "text-lg font-medium text-zinc-900 dark:text-zinc-100 mb-2" $
-        text "Dataset Selection"
-      elClass "p" "text-sm text-zinc-500 dark:text-zinc-400" $
-        text "Choose datasets to visualize on the map"
+renderDatasetStats label (DatasetPair (mIndices, renderFn)) =
+  elClass "div" "mt-4" $ do
+    elClass "h3" "font-medium mb-2" $ text label
+    renderStatsSection $ renderFn (fromMaybe mempty mIndices)
 
 makeStatsToggles ::
   ( DomBuilder t m,
@@ -314,8 +303,8 @@ makeStatsToggles ::
   m (Dynamic t Bool, Dynamic t Bool)
 makeStatsToggles = do
   elClass "div" "space-y-4" $ do
-    dataset1Visible <- traceDyn "datasetD one fires " <$> makeToggle "Dataset 1"
-    dataset2Visible <- traceDyn "datasetD two fires" <$> makeToggle "Dataset 2"
+    dataset1Visible <- makeToggle "Propterty Type Stats"
+    dataset2Visible <- makeToggle "Jurisdiction Stats"
     pure (dataset1Visible, dataset2Visible)
 
 makeToggle ::

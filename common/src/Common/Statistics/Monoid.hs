@@ -15,6 +15,7 @@
 
 module Common.Statistics.Monoid where
 
+import Common.Model.Postgis.DSL
 import Control.Applicative (liftA2)
 import Control.Lens
 import Data.Coerce (coerce)
@@ -213,6 +214,52 @@ instance HasSummaryStatistics (Maybe Double) where
       { _statCount = MonoidStatistics.singletonMonoid a,
         _statUniqueCountOf = MonoidStatistics.singletonMonoid a,
         _statMean = maybe mempty MonoidStatistics.singletonMonoid a,
+        _statMin = maybe mempty MonoidStatistics.singletonMonoid a,
+        _statMax = maybe mempty MonoidStatistics.singletonMonoid a,
+        _statSum = maybe mempty MonoidStatistics.singletonMonoid a
+      }
+
+-- USDCents instances
+instance (Show a, Integral a) => HasSummaryStatistics (USDCents a) where
+  singletonStat a =
+    SummaryStatistics
+      { _statCount = MonoidStatistics.singletonMonoid a,
+        _statUniqueCountOf = MonoidStatistics.singletonMonoid a,
+        _statMean = MonoidStatistics.singletonMonoid $ fromRational @Double . toRational . unUSDCents $ a,
+        _statMin = MonoidStatistics.singletonMonoid a,
+        _statMax = MonoidStatistics.singletonMonoid a,
+        _statSum = MonoidStatistics.singletonMonoid a
+      }
+
+instance (Show a, Integral a) => HasSummaryStatistics (Maybe (USDCents a)) where
+  singletonStat a =
+    SummaryStatistics
+      { _statCount = MonoidStatistics.singletonMonoid a,
+        _statUniqueCountOf = MonoidStatistics.singletonMonoid a,
+        _statMean = maybe mempty (MonoidStatistics.singletonMonoid . fromRational @Double . toRational . unUSDCents) a,
+        _statMin = maybe mempty MonoidStatistics.singletonMonoid a,
+        _statMax = maybe mempty MonoidStatistics.singletonMonoid a,
+        _statSum = maybe mempty MonoidStatistics.singletonMonoid a
+      }
+
+-- USDFloat instances
+instance (Show a, Real a) => HasSummaryStatistics (USDFloat a) where
+  singletonStat a =
+    SummaryStatistics
+      { _statCount = MonoidStatistics.singletonMonoid a,
+        _statUniqueCountOf = MonoidStatistics.singletonMonoid a,
+        _statMean = MonoidStatistics.singletonMonoid $ fromRational @Double . toRational . unUSDFloat $ a,
+        _statMin = MonoidStatistics.singletonMonoid a,
+        _statMax = MonoidStatistics.singletonMonoid a,
+        _statSum = MonoidStatistics.singletonMonoid a
+      }
+
+instance (Show a, Real a) => HasSummaryStatistics (Maybe (USDFloat a)) where
+  singletonStat a =
+    SummaryStatistics
+      { _statCount = MonoidStatistics.singletonMonoid a,
+        _statUniqueCountOf = MonoidStatistics.singletonMonoid a,
+        _statMean = maybe mempty (MonoidStatistics.singletonMonoid . fromRational @Double . toRational . unUSDFloat) a,
         _statMin = maybe mempty MonoidStatistics.singletonMonoid a,
         _statMax = maybe mempty MonoidStatistics.singletonMonoid a,
         _statSum = maybe mempty MonoidStatistics.singletonMonoid a
@@ -1066,3 +1113,187 @@ instance StatMonoid (HKMonoidStat (Max (Maybe Day)) (Maybe Day)) Day where
   singletonMonoid a =
     (coerce :: Maybe (Max (Maybe Day)) -> HKMonoidStat (Max (Maybe Day)) (Maybe Day)) . Just $
       MonoidStatistics.singletonMonoid (Just a)
+
+-- Maybe USDCents StatMonoid instances
+instance (Integral a) => StatMonoid (HKMonoidStat (Min (Maybe (USDCents a))) (Maybe (USDCents a))) (Maybe (USDCents a)) where
+  addValue hkm a = case coerce hkm :: Maybe (Min (Maybe (USDCents a))) of
+    Just m ->
+      (coerce :: Maybe (Min (Maybe (USDCents a))) -> HKMonoidStat (Min (Maybe (USDCents a))) (Maybe (USDCents a)))
+        . Just
+        $ MonoidStatistics.addValue m a
+    Nothing ->
+      (coerce :: Maybe (Min (Maybe (USDCents a))) -> HKMonoidStat (Min (Maybe (USDCents a))) (Maybe (USDCents a)))
+        . Just
+        $ MonoidStatistics.singletonMonoid a
+
+  singletonMonoid a =
+    (coerce :: Maybe (Min (Maybe (USDCents a))) -> HKMonoidStat (Min (Maybe (USDCents a))) (Maybe (USDCents a)))
+      . Just
+      $ MonoidStatistics.singletonMonoid a
+
+instance (Integral a) => StatMonoid (HKMonoidStat (Max (Maybe (USDCents a))) (Maybe (USDCents a))) (Maybe (USDCents a)) where
+  addValue hkm a = case coerce hkm :: Maybe (Max (Maybe (USDCents a))) of
+    Just m ->
+      (coerce :: Maybe (Max (Maybe (USDCents a))) -> HKMonoidStat (Max (Maybe (USDCents a))) (Maybe (USDCents a)))
+        . Just
+        $ MonoidStatistics.addValue m a
+    Nothing ->
+      (coerce :: Maybe (Max (Maybe (USDCents a))) -> HKMonoidStat (Max (Maybe (USDCents a))) (Maybe (USDCents a)))
+        . Just
+        $ MonoidStatistics.singletonMonoid a
+  singletonMonoid a =
+    (coerce :: Maybe (Max (Maybe (USDCents a))) -> HKMonoidStat (Max (Maybe (USDCents a))) (Maybe (USDCents a)))
+      . Just
+      $ MonoidStatistics.singletonMonoid a
+
+instance (Integral a) => StatMonoid (HKMonoidStat (Sum (Maybe (USDCents a))) (Maybe (USDCents a))) (Maybe (USDCents a)) where
+  addValue hkm a = case coerce hkm :: Maybe (Sum (Maybe (USDCents a))) of
+    Just m ->
+      (coerce :: Maybe (Sum (Maybe (USDCents a))) -> HKMonoidStat (Sum (Maybe (USDCents a))) (Maybe (USDCents a)))
+        . Just
+        $ MonoidStatistics.addValue m a
+    Nothing ->
+      (coerce :: Maybe (Sum (Maybe (USDCents a))) -> HKMonoidStat (Sum (Maybe (USDCents a))) (Maybe (USDCents a)))
+        . Just
+        $ MonoidStatistics.singletonMonoid a
+  singletonMonoid a =
+    (coerce :: Maybe (Sum (Maybe (USDCents a))) -> HKMonoidStat (Sum (Maybe (USDCents a))) (Maybe (USDCents a)))
+      . Just
+      $ MonoidStatistics.singletonMonoid a
+
+-- Maybe USDFloat StatMonoid instances
+instance (Real a) => StatMonoid (HKMonoidStat (Min (Maybe (USDFloat a))) (Maybe (USDFloat a))) (Maybe (USDFloat a)) where
+  addValue hkm a = case coerce hkm :: Maybe (Min (Maybe (USDFloat a))) of
+    Just m ->
+      (coerce :: Maybe (Min (Maybe (USDFloat a))) -> HKMonoidStat (Min (Maybe (USDFloat a))) (Maybe (USDFloat a)))
+        . Just
+        $ MonoidStatistics.addValue m a
+    Nothing ->
+      (coerce :: Maybe (Min (Maybe (USDFloat a))) -> HKMonoidStat (Min (Maybe (USDFloat a))) (Maybe (USDFloat a)))
+        . Just
+        $ MonoidStatistics.singletonMonoid a
+  singletonMonoid a =
+    (coerce :: Maybe (Min (Maybe (USDFloat a))) -> HKMonoidStat (Min (Maybe (USDFloat a))) (Maybe (USDFloat a)))
+      . Just
+      $ MonoidStatistics.singletonMonoid a
+
+instance (Real a) => StatMonoid (HKMonoidStat (Max (Maybe (USDFloat a))) (Maybe (USDFloat a))) (Maybe (USDFloat a)) where
+  addValue hkm a = case coerce hkm :: Maybe (Max (Maybe (USDFloat a))) of
+    Just m ->
+      (coerce :: Maybe (Max (Maybe (USDFloat a))) -> HKMonoidStat (Max (Maybe (USDFloat a))) (Maybe (USDFloat a)))
+        . Just
+        $ MonoidStatistics.addValue m a
+    Nothing ->
+      (coerce :: Maybe (Max (Maybe (USDFloat a))) -> HKMonoidStat (Max (Maybe (USDFloat a))) (Maybe (USDFloat a)))
+        . Just
+        $ MonoidStatistics.singletonMonoid a
+  singletonMonoid a =
+    (coerce :: Maybe (Max (Maybe (USDFloat a))) -> HKMonoidStat (Max (Maybe (USDFloat a))) (Maybe (USDFloat a)))
+      . Just
+      $ MonoidStatistics.singletonMonoid a
+
+instance (Real a) => StatMonoid (HKMonoidStat (Sum (Maybe (USDFloat a))) (Maybe (USDFloat a))) (Maybe (USDFloat a)) where
+  addValue hkm a = case coerce hkm :: Maybe (Sum (Maybe (USDFloat a))) of
+    Just m ->
+      (coerce :: Maybe (Sum (Maybe (USDFloat a))) -> HKMonoidStat (Sum (Maybe (USDFloat a))) (Maybe (USDFloat a)))
+        . Just
+        $ MonoidStatistics.addValue m a
+    Nothing ->
+      (coerce :: Maybe (Sum (Maybe (USDFloat a))) -> HKMonoidStat (Sum (Maybe (USDFloat a))) (Maybe (USDFloat a)))
+        . Just
+        $ MonoidStatistics.singletonMonoid a
+  singletonMonoid a =
+    (coerce :: Maybe (Sum (Maybe (USDFloat a))) -> HKMonoidStat (Sum (Maybe (USDFloat a))) (Maybe (USDFloat a)))
+      . Just
+      $ MonoidStatistics.singletonMonoid a
+
+instance (Integral a) => StatMonoid (HKMonoidStat (Min (Maybe (USDCents a))) (Maybe (USDCents a))) (USDCents a) where
+  addValue hkm a = case coerce hkm :: Maybe (Min (Maybe (USDCents a))) of
+    Just m ->
+      (coerce :: Maybe (Min (Maybe (USDCents a))) -> HKMonoidStat (Min (Maybe (USDCents a))) (Maybe (USDCents a)))
+        . Just
+        $ MonoidStatistics.addValue m (Just a)
+    Nothing ->
+      (coerce :: Maybe (Min (Maybe (USDCents a))) -> HKMonoidStat (Min (Maybe (USDCents a))) (Maybe (USDCents a)))
+        . Just
+        $ MonoidStatistics.singletonMonoid (Just a)
+  singletonMonoid a =
+    (coerce :: Maybe (Min (Maybe (USDCents a))) -> HKMonoidStat (Min (Maybe (USDCents a))) (Maybe (USDCents a)))
+      . Just
+      $ MonoidStatistics.singletonMonoid (Just a)
+
+instance (Integral a) => StatMonoid (HKMonoidStat (Max (Maybe (USDCents a))) (Maybe (USDCents a))) (USDCents a) where
+  addValue hkm a = case coerce hkm :: Maybe (Max (Maybe (USDCents a))) of
+    Just m ->
+      (coerce :: Maybe (Max (Maybe (USDCents a))) -> HKMonoidStat (Max (Maybe (USDCents a))) (Maybe (USDCents a)))
+        . Just
+        $ MonoidStatistics.addValue m (Just a)
+    Nothing ->
+      (coerce :: Maybe (Max (Maybe (USDCents a))) -> HKMonoidStat (Max (Maybe (USDCents a))) (Maybe (USDCents a)))
+        . Just
+        $ MonoidStatistics.singletonMonoid (Just a)
+  singletonMonoid a =
+    (coerce :: Maybe (Max (Maybe (USDCents a))) -> HKMonoidStat (Max (Maybe (USDCents a))) (Maybe (USDCents a)))
+      . Just
+      $ MonoidStatistics.singletonMonoid (Just a)
+
+instance (Integral a) => StatMonoid (HKMonoidStat (Sum (Maybe (USDCents a))) (Maybe (USDCents a))) (USDCents a) where
+  addValue hkm a = case coerce hkm :: Maybe (Sum (Maybe (USDCents a))) of
+    Just m ->
+      (coerce :: Maybe (Sum (Maybe (USDCents a))) -> HKMonoidStat (Sum (Maybe (USDCents a))) (Maybe (USDCents a)))
+        . Just
+        $ MonoidStatistics.addValue m (Just a)
+    Nothing ->
+      (coerce :: Maybe (Sum (Maybe (USDCents a))) -> HKMonoidStat (Sum (Maybe (USDCents a))) (Maybe (USDCents a)))
+        . Just
+        $ MonoidStatistics.singletonMonoid (Just a)
+  singletonMonoid a =
+    (coerce :: Maybe (Sum (Maybe (USDCents a))) -> HKMonoidStat (Sum (Maybe (USDCents a))) (Maybe (USDCents a)))
+      . Just
+      $ MonoidStatistics.singletonMonoid (Just a)
+
+-- StatMonoid instances for USDFloat
+instance (Real a) => StatMonoid (HKMonoidStat (Min (Maybe (USDFloat a))) (Maybe (USDFloat a))) (USDFloat a) where
+  addValue hkm a = case coerce hkm :: Maybe (Min (Maybe (USDFloat a))) of
+    Just m ->
+      (coerce :: Maybe (Min (Maybe (USDFloat a))) -> HKMonoidStat (Min (Maybe (USDFloat a))) (Maybe (USDFloat a)))
+        . Just
+        $ MonoidStatistics.addValue m (Just a)
+    Nothing ->
+      (coerce :: Maybe (Min (Maybe (USDFloat a))) -> HKMonoidStat (Min (Maybe (USDFloat a))) (Maybe (USDFloat a)))
+        . Just
+        $ MonoidStatistics.singletonMonoid (Just a)
+  singletonMonoid a =
+    (coerce :: Maybe (Min (Maybe (USDFloat a))) -> HKMonoidStat (Min (Maybe (USDFloat a))) (Maybe (USDFloat a)))
+      . Just
+      $ MonoidStatistics.singletonMonoid (Just a)
+
+instance (Real a) => StatMonoid (HKMonoidStat (Max (Maybe (USDFloat a))) (Maybe (USDFloat a))) (USDFloat a) where
+  addValue hkm a = case coerce hkm :: Maybe (Max (Maybe (USDFloat a))) of
+    Just m ->
+      (coerce :: Maybe (Max (Maybe (USDFloat a))) -> HKMonoidStat (Max (Maybe (USDFloat a))) (Maybe (USDFloat a)))
+        . Just
+        $ MonoidStatistics.addValue m (Just a)
+    Nothing ->
+      (coerce :: Maybe (Max (Maybe (USDFloat a))) -> HKMonoidStat (Max (Maybe (USDFloat a))) (Maybe (USDFloat a)))
+        . Just
+        $ MonoidStatistics.singletonMonoid (Just a)
+  singletonMonoid a =
+    (coerce :: Maybe (Max (Maybe (USDFloat a))) -> HKMonoidStat (Max (Maybe (USDFloat a))) (Maybe (USDFloat a)))
+      . Just
+      $ MonoidStatistics.singletonMonoid (Just a)
+
+instance (Real a) => StatMonoid (HKMonoidStat (Sum (Maybe (USDFloat a))) (Maybe (USDFloat a))) (USDFloat a) where
+  addValue hkm a = case coerce hkm :: Maybe (Sum (Maybe (USDFloat a))) of
+    Just m ->
+      (coerce :: Maybe (Sum (Maybe (USDFloat a))) -> HKMonoidStat (Sum (Maybe (USDFloat a))) (Maybe (USDFloat a)))
+        . Just
+        $ MonoidStatistics.addValue m (Just a)
+    Nothing ->
+      (coerce :: Maybe (Sum (Maybe (USDFloat a))) -> HKMonoidStat (Sum (Maybe (USDFloat a))) (Maybe (USDFloat a)))
+        . Just
+        $ MonoidStatistics.singletonMonoid (Just a)
+  singletonMonoid a =
+    (coerce :: Maybe (Sum (Maybe (USDFloat a))) -> HKMonoidStat (Sum (Maybe (USDFloat a))) (Maybe (USDFloat a)))
+      . Just
+      $ MonoidStatistics.singletonMonoid (Just a)

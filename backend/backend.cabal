@@ -46,6 +46,7 @@ library
     , rhyolite-notify-listen
     , rhyolite-notify-listen-beam
     , safe-exceptions
+    , scientific
     , snap-core
     , tagged
     , text

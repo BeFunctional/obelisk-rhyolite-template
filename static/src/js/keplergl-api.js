@@ -81,6 +81,7 @@ export class KeplerGlAPI {
   initialize(mapBoxApiToken) {
     try {
       this.log('Initializing Kepler element');
+      const isDarkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
       const KeplerElement = () => {
         return React.createElement(
           'div',
@@ -91,6 +92,7 @@ export class KeplerGlAPI {
               width: width,
               height: height,
               mapboxApiAccessToken: mapBoxApiToken,
+              theme: isDarkMode ? 'dark' : 'light'
             })
           )
         );
@@ -169,9 +171,6 @@ export class KeplerGlAPI {
           },
           data: processCsvData(dataset.data)
         }],
-        config: {
-          mapStyle: { styleType: 'light' }
-        },
         option: {
           centerMap: true,
           keepExistingConfig: true
